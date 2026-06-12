@@ -1,6 +1,6 @@
 "use client";
-import type { SkinId, ZoneId } from "@/types";
-import { ZONES, SKINS, GAME_CONFIG } from "@/lib/constants";
+import type { SkinId } from "@/types";
+import { COUNTRIES, SKINS, GAME_CONFIG } from "@/lib/constants";
 
 const SKIN_VISUAL: Record<SkinId, { body: string; bg: string }> = {
   default:           { body: "👨‍🌾", bg: "from-amber-300 to-amber-500" },
@@ -10,42 +10,48 @@ const SKIN_VISUAL: Record<SkinId, { body: string; bg: string }> = {
 };
 
 interface Props {
-  address: string; points: number; level: number;
-  skin: SkinId; zone: ZoneId; usdtBalance: string;
+  address: string;
+  username: string;
+  countryCode: string;
+  points: number;
+  level: number;
+  skin: SkinId;
+  usdtBalance: string;
   onChangeSkin: () => void;
 }
 
-export default function Profile({ address, points, level, skin, zone, usdtBalance, onChangeSkin }: Props) {
-  const zoneData = ZONES.find((z) => z.id === zone);
+export default function Profile({ address, username, countryCode, points, level, skin, usdtBalance, onChangeSkin }: Props) {
+  const country  = COUNTRIES.find((c) => c.code === countryCode);
   const skinData = SKINS.find((s) => s.id === skin);
-  const visual = SKIN_VISUAL[skin];
-  const usdt = (points / GAME_CONFIG.POINTS_TO_USDT_RATE).toFixed(3);
-  const base = (level - 1) * 500;
-  const next = level * 500;
+  const visual   = SKIN_VISUAL[skin];
+  const usdt     = (points / GAME_CONFIG.POINTS_TO_USDT_RATE).toFixed(3);
+  const base     = (level - 1) * 500;
+  const next     = level * 500;
   const progress = Math.min(100, Math.max(0, ((points - base) / (next - base)) * 100));
 
   return (
     <div className="flex flex-col gap-4">
 
-      {/* Tarjeta avatar — grande y luminosa */}
       <div className={`bg-gradient-to-b ${visual.bg} rounded-3xl p-6 flex flex-col items-center shadow`}>
-        {/* Sol decorativo */}
         <div className="text-2xl animate-sun mb-1">☀️</div>
 
-        {/* Avatar grande */}
         <div className="w-28 h-28 bg-white/30 rounded-full flex items-center justify-center text-7xl border-4 border-white/50 shadow-lg mb-3">
           {visual.body}
         </div>
 
-        <p className="text-white font-bold text-lg drop-shadow">
-          {address.slice(0, 6)}...{address.slice(-4)}
-        </p>
+        <p className="text-white font-bold text-lg drop-shadow">{username}</p>
         <p className="text-white/80 text-sm">{skinData?.name}</p>
 
-        <div className="mt-2 flex items-center gap-1 bg-black/20 px-3 py-1 rounded-full">
-          <span>{zoneData?.emoji}</span>
-          <span className="text-white text-sm">{zoneData?.name}</span>
-        </div>
+        {country && (
+          <div className="mt-2 flex items-center gap-1 bg-black/20 px-3 py-1 rounded-full">
+            <span>{country.flag}</span>
+            <span className="text-white text-sm">{country.name}</span>
+          </div>
+        )}
+
+        <p className="text-white/60 text-xs mt-1 font-mono">
+          {address.slice(0, 6)}...{address.slice(-4)}
+        </p>
 
         <button
           onClick={onChangeSkin}
@@ -55,13 +61,12 @@ export default function Profile({ address, points, level, skin, zone, usdtBalanc
         </button>
       </div>
 
-      {/* Stats en grid */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: "Nivel",     value: level,                       color: "text-green-700",  bg: "bg-green-50  border-green-200" },
-          { label: "Puntos",    value: points.toLocaleString(),      color: "text-amber-600",  bg: "bg-amber-50  border-amber-200" },
-          { label: "≈ USDT",   value: usdt,                         color: "text-lime-700",   bg: "bg-lime-50   border-lime-200"  },
-          { label: "Balance",   value: `${usdtBalance} USDT`,        color: "text-blue-700",   bg: "bg-blue-50   border-blue-200"  },
+          { label: "Nivel",   value: level,                  color: "text-green-700", bg: "bg-green-50  border-green-200" },
+          { label: "Puntos",  value: points.toLocaleString(), color: "text-amber-600", bg: "bg-amber-50  border-amber-200" },
+          { label: "≈ USDT",  value: usdt,                   color: "text-lime-700",  bg: "bg-lime-50   border-lime-200"  },
+          { label: "Balance", value: `${usdtBalance} USDT`,  color: "text-blue-700",  bg: "bg-blue-50   border-blue-200"  },
         ].map((stat) => (
           <div key={stat.label} className={`${stat.bg} border-2 rounded-2xl p-4 text-center`}>
             <p className="text-gray-500 text-xs mb-1">{stat.label}</p>
@@ -70,7 +75,6 @@ export default function Profile({ address, points, level, skin, zone, usdtBalanc
         ))}
       </div>
 
-      {/* Barra de nivel */}
       <div className="bg-white border-2 border-amber-200 rounded-2xl p-4">
         <div className="flex justify-between text-xs text-gray-500 mb-2">
           <span>Nivel {level}</span>
@@ -85,7 +89,6 @@ export default function Profile({ address, points, level, skin, zone, usdtBalanc
         </p>
       </div>
 
-      {/* Mis skins */}
       <div className="bg-white border-2 border-amber-200 rounded-2xl p-4">
         <p className="text-green-800 text-sm font-bold mb-3">🎨 Mis skins</p>
         <div className="flex gap-2">

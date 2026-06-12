@@ -1,45 +1,40 @@
-// ─── Zonas de Colombia ───────────────────────────────────────────────────────
-export type ZoneId = "eje_cafetero" | "cundinamarca" | "valle_cauca";
-
-export interface Zone {
-  id: ZoneId;
+// ─── País del jugador ─────────────────────────────────────────────────────────
+export interface Country {
+  code: string;   // ISO 3166-1 alpha-2
   name: string;
-  region: string;
-  primaryCrop: CropId;
-  secondaryCrop: CropId;
-  color: string;
-  emoji: string;
-  description: string;
+  flag: string;   // emoji
 }
 
-// ─── Cultivos ─────────────────────────────────────────────────────────────────
-export type CropId = "cafe" | "platano" | "flores" | "papa" | "cana" | "cacao";
+// ─── Cultivos globales ────────────────────────────────────────────────────────
+export type CropId =
+  | "cana" | "maiz" | "trigo" | "arroz" | "papa"
+  | "soya" | "yuca" | "tomate" | "banano" | "cafe";
 
 export interface Crop {
   id: CropId;
   name: string;
   emoji: string;
-  growTimeHours: number;   // horas para cosechar
-  pointsReward: number;    // puntos al cosechar
-  seedCostUSDT: number;    // costo de semilla premium
+  growTimeHours: number;
+  pointsReward: number;
+  seedCostUSDT: number;
 }
 
-// ─── Plot (parcela del mapa) ──────────────────────────────────────────────────
+// ─── Plot (parcela) ───────────────────────────────────────────────────────────
 export type PlotState = "empty" | "planted" | "growing" | "ready";
 
 export interface Plot {
   id: number;
   state: PlotState;
   cropId?: CropId;
-  plantedAt?: number;      // timestamp ms
-  readyAt?: number;        // timestamp ms
+  plantedAt?: number;
+  readyAt?: number;
 }
 
 // ─── Jugador ──────────────────────────────────────────────────────────────────
 export interface Player {
   address: string;
-  name: string;
-  zone: ZoneId;
+  username: string;
+  countryCode: string;
   points: number;
   level: number;
   plots: Plot[];
@@ -62,9 +57,10 @@ export interface Skin {
 export interface RankingEntry {
   position: number;
   address: string;
-  name: string;
+  username: string;
+  countryCode: string;
+  countryFlag: string;
   points: number;
   level: number;
-  zone: ZoneId;
   skin: SkinId;
 }

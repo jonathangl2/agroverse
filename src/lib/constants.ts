@@ -1,64 +1,57 @@
-import type { Zone, Crop, Skin } from "@/types";
+import type { Country, Crop, Skin } from "@/types";
 
-// ─── Zonas de Colombia ────────────────────────────────────────────────────────
-export const ZONES: Zone[] = [
-  {
-    id: "eje_cafetero",
-    name: "Eje Cafetero",
-    region: "Caldas · Quindío · Risaralda",
-    primaryCrop: "cafe",
-    secondaryCrop: "platano",
-    color: "#6B4226",
-    emoji: "☕",
-    description: "Tierra del mejor café del mundo. Clima perfecto, suelo volcánico.",
-  },
-  {
-    id: "cundinamarca",
-    name: "Cundinamarca",
-    region: "Cundinamarca · Boyacá",
-    primaryCrop: "flores",
-    secondaryCrop: "papa",
-    color: "#E91E8C",
-    emoji: "🌸",
-    description: "Capital de las flores. Exporta al mundo entero desde la Sabana.",
-  },
-  {
-    id: "valle_cauca",
-    name: "Valle del Cauca",
-    region: "Valle del Cauca · Cauca",
-    primaryCrop: "cana",
-    secondaryCrop: "cacao",
-    color: "#2E7D32",
-    emoji: "🎋",
-    description: "Corazón agroindustrial de Colombia. Caña y cacao de exportación.",
-  },
+// ─── Países ───────────────────────────────────────────────────────────────────
+export const COUNTRIES: Country[] = [
+  { code: "CO", name: "Colombia",       flag: "🇨🇴" },
+  { code: "KE", name: "Kenia",          flag: "🇰🇪" },
+  { code: "NG", name: "Nigeria",        flag: "🇳🇬" },
+  { code: "GH", name: "Ghana",          flag: "🇬🇭" },
+  { code: "BR", name: "Brasil",         flag: "🇧🇷" },
+  { code: "MX", name: "México",         flag: "🇲🇽" },
+  { code: "PE", name: "Perú",           flag: "🇵🇪" },
+  { code: "PH", name: "Filipinas",      flag: "🇵🇭" },
+  { code: "IN", name: "India",          flag: "🇮🇳" },
+  { code: "VN", name: "Vietnam",        flag: "🇻🇳" },
+  { code: "ET", name: "Etiopía",        flag: "🇪🇹" },
+  { code: "AR", name: "Argentina",      flag: "🇦🇷" },
+  { code: "EC", name: "Ecuador",        flag: "🇪🇨" },
+  { code: "ZA", name: "Sudáfrica",      flag: "🇿🇦" },
+  { code: "OTHER", name: "Otro país",   flag: "🌍" },
 ];
 
-// ─── Cultivos ─────────────────────────────────────────────────────────────────
+// ─── Top 10 cultivos mundiales (FAO) ─────────────────────────────────────────
 export const CROPS: Record<string, Crop> = {
-  cafe: {
-    id: "cafe",
-    name: "Café",
-    emoji: "☕",
-    growTimeHours: 8,
-    pointsReward: 50,
-    seedCostUSDT: 0.05,
+  cana: {
+    id: "cana",
+    name: "Caña de azúcar",
+    emoji: "🎋",
+    growTimeHours: 16,
+    pointsReward: 100,
+    seedCostUSDT: 0.10,
   },
-  platano: {
-    id: "platano",
-    name: "Plátano",
-    emoji: "🍌",
+  maiz: {
+    id: "maiz",
+    name: "Maíz",
+    emoji: "🌽",
     growTimeHours: 6,
-    pointsReward: 30,
+    pointsReward: 35,
     seedCostUSDT: 0.03,
   },
-  flores: {
-    id: "flores",
-    name: "Flores",
-    emoji: "🌸",
-    growTimeHours: 12,
-    pointsReward: 80,
-    seedCostUSDT: 0.08,
+  trigo: {
+    id: "trigo",
+    name: "Trigo",
+    emoji: "🌾",
+    growTimeHours: 8,
+    pointsReward: 45,
+    seedCostUSDT: 0.04,
+  },
+  arroz: {
+    id: "arroz",
+    name: "Arroz",
+    emoji: "🍚",
+    growTimeHours: 10,
+    pointsReward: 60,
+    seedCostUSDT: 0.06,
   },
   papa: {
     id: "papa",
@@ -68,21 +61,45 @@ export const CROPS: Record<string, Crop> = {
     pointsReward: 20,
     seedCostUSDT: 0.02,
   },
-  cana: {
-    id: "cana",
-    name: "Caña",
-    emoji: "🎋",
-    growTimeHours: 16,
-    pointsReward: 100,
-    seedCostUSDT: 0.10,
+  soya: {
+    id: "soya",
+    name: "Soya",
+    emoji: "🫘",
+    growTimeHours: 12,
+    pointsReward: 75,
+    seedCostUSDT: 0.07,
   },
-  cacao: {
-    id: "cacao",
-    name: "Cacao",
-    emoji: "🍫",
-    growTimeHours: 10,
-    pointsReward: 65,
-    seedCostUSDT: 0.06,
+  yuca: {
+    id: "yuca",
+    name: "Yuca",
+    emoji: "🍠",
+    growTimeHours: 14,
+    pointsReward: 85,
+    seedCostUSDT: 0.08,
+  },
+  tomate: {
+    id: "tomate",
+    name: "Tomate",
+    emoji: "🍅",
+    growTimeHours: 5,
+    pointsReward: 28,
+    seedCostUSDT: 0.02,
+  },
+  banano: {
+    id: "banano",
+    name: "Banano",
+    emoji: "🍌",
+    growTimeHours: 7,
+    pointsReward: 40,
+    seedCostUSDT: 0.04,
+  },
+  cafe: {
+    id: "cafe",
+    name: "Café",
+    emoji: "☕",
+    growTimeHours: 9,
+    pointsReward: 55,
+    seedCostUSDT: 0.05,
   },
 };
 
@@ -90,7 +107,7 @@ export const CROPS: Record<string, Crop> = {
 export const SKINS: Skin[] = [
   {
     id: "default",
-    name: "Campesino Base",
+    name: "Farmer Base",
     priceUSDT: 0,
     rarity: "common",
     description: "El agricultor de siempre. Fiel a sus raíces.",
@@ -121,9 +138,9 @@ export const SKINS: Skin[] = [
 // ─── Configuración del juego ──────────────────────────────────────────────────
 export const GAME_CONFIG = {
   PLOTS_PER_PLAYER: 3,
-  POINTS_TO_USDT_RATE: 1000, // 1000 puntos = 1 USDT
+  POINTS_TO_USDT_RATE: 1000,
   MIN_WITHDRAW_POINTS: 500,
-  PLATFORM_FEE_PCT: 5,       // 5% fee en marketplace
+  PLATFORM_FEE_PCT: 5,
 };
 
 // ─── Celo / MiniPay ───────────────────────────────────────────────────────────

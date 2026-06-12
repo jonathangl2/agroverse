@@ -1,45 +1,49 @@
 "use client";
 import type { RankingEntry } from "@/types";
-import { ZONES } from "@/lib/constants";
 
 const MOCK_RANKING: RankingEntry[] = [
-  { position: 1, address: "0xABc1", name: "Don Carlos",  points: 4820, level: 12, zone: "eje_cafetero",  skin: "sombrero_aguadeno" },
-  { position: 2, address: "0xDEf2", name: "La Paisita",  points: 3950, level: 10, zone: "eje_cafetero",  skin: "ruana_roja" },
-  { position: 3, address: "0xGHi3", name: "ElCachaco",   points: 3210, level: 9,  zone: "cundinamarca",  skin: "default" },
-  { position: 4, address: "0xJKl4", name: "Valluno",     points: 2890, level: 8,  zone: "valle_cauca",   skin: "overol_verde" },
-  { position: 5, address: "0xMNo5", name: "CafeCero",    points: 2540, level: 7,  zone: "eje_cafetero",  skin: "default" },
-  { position: 6, address: "0xPQr6", name: "Boyacense",   points: 2100, level: 6,  zone: "cundinamarca",  skin: "ruana_roja" },
-  { position: 7, address: "0xSTu7", name: "SaborCali",   points: 1780, level: 5,  zone: "valle_cauca",   skin: "default" },
-  { position: 8, address: "0xVWx8", name: "Semillero",   points: 1450, level: 4,  zone: "eje_cafetero",  skin: "default" },
+  { position: 1, address: "0xABc1", username: "KenyanFarmer",   countryCode: "KE", countryFlag: "🇰🇪", points: 4820, level: 12, skin: "sombrero_aguadeno" },
+  { position: 2, address: "0xDEf2", username: "CafeteroGlobal", countryCode: "CO", countryFlag: "🇨🇴", points: 3950, level: 10, skin: "ruana_roja" },
+  { position: 3, address: "0xGHi3", username: "RiceFarmerVN",   countryCode: "VN", countryFlag: "🇻🇳", points: 3210, level: 9,  skin: "default" },
+  { position: 4, address: "0xJKl4", username: "NaijaGrower",    countryCode: "NG", countryFlag: "🇳🇬", points: 2890, level: 8,  skin: "overol_verde" },
+  { position: 5, address: "0xMNo5", username: "BrazilSoja",     countryCode: "BR", countryFlag: "🇧🇷", points: 2540, level: 7,  skin: "default" },
+  { position: 6, address: "0xPQr6", username: "IndiaWheat",     countryCode: "IN", countryFlag: "🇮🇳", points: 2100, level: 6,  skin: "ruana_roja" },
+  { position: 7, address: "0xSTu7", username: "MexMaizero",     countryCode: "MX", countryFlag: "🇲🇽", points: 1780, level: 5,  skin: "default" },
+  { position: 8, address: "0xVWx8", username: "GhanaYuca",      countryCode: "GH", countryFlag: "🇬🇭", points: 1450, level: 4,  skin: "default" },
 ];
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 
-interface Props { currentAddress?: string | null; currentPoints?: number; }
+interface Props {
+  currentAddress?: string | null;
+  currentPoints?: number;
+  username?: string;
+  countryFlag?: string;
+}
 
-export default function Ranking({ currentAddress, currentPoints }: Props) {
+export default function Ranking({ currentAddress, currentPoints, username, countryFlag }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="text-center">
-        <h2 className="text-xl font-bold text-green-800">🏆 Ranking Colombia</h2>
-        <p className="text-green-600 text-xs mt-1">Top agricultores · Season 1</p>
+        <h2 className="text-xl font-bold text-green-800">🏆 Ranking Global</h2>
+        <p className="text-green-600 text-xs mt-1">Top agricultores del mundo · Season 1</p>
       </div>
 
-      {/* Premio */}
       <div className="bg-amber-100 border-2 border-amber-300 rounded-2xl p-3 text-center">
         <p className="text-amber-800 text-sm font-bold">🎁 Premio del mes</p>
         <p className="text-amber-700 text-xs mt-1">
-          Top 3 recibe <strong>USDT + 1 lb de Café Colombiano</strong>
+          Top 3 recibe <strong>USDT real</strong> directo a su wallet
         </p>
-        <p className="text-amber-500 text-xs mt-0.5">Patrocinado por cafeteros locales</p>
+        <p className="text-amber-500 text-xs mt-0.5">Reset: 30 Jun 2026</p>
       </div>
 
-      {/* Tu posición */}
       {currentAddress && (
         <div className="bg-green-50 border-2 border-green-300 rounded-2xl p-3">
           <p className="text-green-600 text-xs mb-1 font-medium">Tu posición</p>
           <div className="flex items-center justify-between">
-            <span className="text-green-800 font-bold">#{MOCK_RANKING.length + 1} · Tú</span>
+            <span className="text-green-800 font-bold">
+              #{MOCK_RANKING.length + 1} · {countryFlag} {username ?? "Tú"}
+            </span>
             <span className="text-amber-600 font-mono font-bold">{currentPoints ?? 0} pts</span>
           </div>
           <div className="mt-2 bg-green-200 rounded-full h-2">
@@ -49,7 +53,6 @@ export default function Ranking({ currentAddress, currentPoints }: Props) {
         </div>
       )}
 
-      {/* Lista */}
       <div className="space-y-2">
         {MOCK_RANKING.map((entry) => (
           <div key={entry.position}
@@ -60,10 +63,10 @@ export default function Ranking({ currentAddress, currentPoints }: Props) {
               {MEDAL[entry.position - 1] ?? `#${entry.position}`}
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-green-900 font-semibold text-sm truncate">{entry.name}</p>
-              <p className="text-green-500 text-xs">
-                {ZONES.find((z) => z.id === entry.zone)?.emoji} {ZONES.find((z) => z.id === entry.zone)?.name} · Nv.{entry.level}
+              <p className="text-green-900 font-semibold text-sm truncate">
+                {entry.countryFlag} {entry.username}
               </p>
+              <p className="text-green-500 text-xs">Nivel {entry.level}</p>
             </div>
             <div className="text-right">
               <p className="text-amber-600 font-bold font-mono">{entry.points.toLocaleString()}</p>
@@ -72,8 +75,6 @@ export default function Ranking({ currentAddress, currentPoints }: Props) {
           </div>
         ))}
       </div>
-
-      <p className="text-gray-400 text-xs text-center">Ranking actualiza cada 24h · Reset: 30 Jun 2026</p>
     </div>
   );
 }
