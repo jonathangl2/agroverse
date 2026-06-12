@@ -1,8 +1,19 @@
 @import "tailwindcss";
 
+/* ── Forzar modo CLARO siempre ── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light only;
+  --background: #fef9f0;
+  --foreground: #2d1b06;
+}
+
+/* Anular cualquier preferencia de modo oscuro del sistema */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: light only;
+    --background: #fef9f0;
+    --foreground: #2d1b06;
+  }
 }
 
 @theme inline {
@@ -12,11 +23,9 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 body {
@@ -24,3 +33,37 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ── Animaciones del juego ── */
+@keyframes plant-bounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%       { transform: translateY(-6px) rotate(-10deg); }
+  75%       { transform: translateY(-3px) rotate(8deg); }
+}
+
+@keyframes grow-pop {
+  0%   { transform: scale(0.5); opacity: 0.5; }
+  60%  { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes harvest-shine {
+  0%, 100% { box-shadow: 0 0 0px #fbbf24; }
+  50%       { box-shadow: 0 0 18px #fbbf24, 0 0 36px #f59e0b; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-4px); }
+}
+
+@keyframes sun-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.animate-plant    { animation: plant-bounce 0.6s ease-in-out; }
+.animate-grow-pop { animation: grow-pop 0.4s ease-out forwards; }
+.animate-harvest  { animation: harvest-shine 1.2s ease-in-out infinite; }
+.animate-float    { animation: float 2.5s ease-in-out infinite; }
+.animate-sun      { animation: sun-spin 12s linear infinite; }

@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  turbopack: {},   // habilita Turbopack limpio (sin webpack config)
 };
 
 export default nextConfig;
