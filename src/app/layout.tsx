@@ -29,7 +29,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       style={{ colorScheme: "light" }}
     >
-      <body className="min-h-full flex flex-col bg-[#fef9f0]">{children}</body>
+      <body className="min-h-full bg-stone-200 flex justify-center">
+        <div className="relative w-full max-w-[430px] min-h-screen bg-[#fef9f0] shadow-2xl">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
