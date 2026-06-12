@@ -31,7 +31,7 @@ export default function UserSetup({ onDone }: Props) {
     <div className="min-h-screen flex flex-col items-center justify-center p-6"
          style={{ background: "linear-gradient(180deg, #87ceeb 0%, #e8f5e9 40%, #fff8e1 100%)" }}>
 
-      <img src="/assets/logo.png" alt="AgroVerse" className="w-20 h-20 rounded-2xl shadow-xl mb-4 animate-float" />
+      <img src="/assets/logo.png" alt="AgroVerse" className="w-20 h-20 mb-4 animate-float" />
       <h1 className="text-2xl font-bold text-green-800 mb-1">Crea tu perfil</h1>
       <p className="text-green-600 text-sm mb-8 text-center max-w-xs">
         Elige tu nombre de agricultor y tu país. Así aparecerás en el ranking global.

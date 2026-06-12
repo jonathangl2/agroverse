@@ -37,7 +37,7 @@ export default function GameApp() {
   const [level, setLevel]           = useState(1);
   const [skin, setSkin]             = useState<SkinId>("default");
   const [tab, setTab]               = useState<Tab>("farm");
-  const [toast, setToast]           = useState<string | null>(null);
+  const [toast, setToast]           = useState<{ msg: string; type: "points" | "level" } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const switchTab = useCallback((t: Tab) => {
@@ -56,7 +56,7 @@ export default function GameApp() {
       <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center"
            style={{ background: "linear-gradient(180deg, #87ceeb 0%, #e8f5e9 40%, #fff8e1 100%)" }}>
         <div className="text-5xl mb-1 animate-float">☁️</div>
-        <img src="/assets/logo.png" alt="AgroVerse" className="w-24 h-24 rounded-2xl shadow-xl mb-4 animate-float" />
+        <img src="/assets/logo.png" alt="AgroVerse" className="w-24 h-24 mb-4 animate-float" />
         <h1 className="text-3xl font-bold text-green-800 mb-1">AgroVerse</h1>
         <p className="text-green-600 text-sm mb-1">Season 1 · Global</p>
         <p className="text-green-700/80 text-sm mb-8 max-w-xs">
@@ -103,8 +103,8 @@ export default function GameApp() {
   // 4. Juego principal
   const countryFlag = COUNTRIES.find((c) => c.code === countryCode)?.flag ?? "🌍";
 
-  const showToast = (msg: string) => {
-    setToast(msg);
+  const showToast = (msg: string, type: "points" | "level" = "points") => {
+    setToast({ msg, type });
     setTimeout(() => setToast(null), 2500);
   };
 
@@ -114,9 +114,9 @@ export default function GameApp() {
       const newLevel = Math.floor(next / 500) + 1;
       if (newLevel > level) {
         setLevel(newLevel);
-        showToast(`🎉 ¡Subiste al nivel ${newLevel}!`);
+        showToast(`¡Subiste al nivel ${newLevel}!`, "level");
       } else {
-        showToast(`+${earned} pts cosechados ✅`);
+        showToast(`+${earned} pts`, "points");
       }
       return next;
     });
@@ -134,7 +134,7 @@ export default function GameApp() {
       <div className="fixed top-0 left-0 right-0 z-40 shadow-md">
         <div className="flex items-center bg-green-700 px-4 py-2.5 gap-2">
           {/* Logo + nombre — lado izquierdo */}
-          <img src="/assets/logo.png" alt="AgroVerse" className="w-7 h-7 rounded-lg shrink-0" />
+          <img src="/assets/logo.png" alt="AgroVerse" className="w-7 h-7 shrink-0" />
           <span className="font-bold text-white text-sm shrink-0">AgroVerse</span>
 
           <div className="flex-1" />
@@ -162,9 +162,27 @@ export default function GameApp() {
 
       <div style={{ height: demoMode ? 76 : 54 }} />
 
-      {toast && (
-        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-5 py-2 rounded-full text-sm font-semibold shadow-lg animate-grow-pop">
-          {toast}
+      {toast && toast.type === "points" && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-grow-pop">
+          <div className="flex items-center gap-2 bg-white border-2 border-yellow-300 rounded-2xl px-4 py-3 shadow-xl">
+            <span className="text-2xl">🌾</span>
+            <div>
+              <p className="text-yellow-600 font-black text-lg leading-none">{toast.msg}</p>
+              <p className="text-gray-400 text-xs mt-0.5">¡Cosecha exitosa!</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && toast.type === "level" && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-grow-pop">
+          <div className="flex items-center gap-2 bg-gradient-to-r from-amber-400 to-yellow-300 rounded-2xl px-5 py-3 shadow-xl border-2 border-yellow-400">
+            <span className="text-3xl">🎉</span>
+            <div>
+              <p className="text-white font-black text-base leading-none drop-shadow">{toast.msg}</p>
+              <p className="text-yellow-900/70 text-xs mt-0.5 font-medium">¡Sigue cosechando!</p>
+            </div>
+          </div>
         </div>
       )}
 

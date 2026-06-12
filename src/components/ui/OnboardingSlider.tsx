@@ -67,7 +67,7 @@ export default function OnboardingSlider({ onFinish }: Props) {
 
         <div className="flex items-center justify-between pt-12 pb-4">
           <div className="flex items-center gap-2">
-            <img src="/assets/logo.png" alt="AgroVerse" className="w-9 h-9 rounded-xl shadow-lg" />
+            <img src="/assets/logo.png" alt="AgroVerse" className="w-9 h-9" />
             <span className="text-white font-bold text-lg tracking-tight drop-shadow">AgroVerse</span>
           </div>
           {!isLast && (
