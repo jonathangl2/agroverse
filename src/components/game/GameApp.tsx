@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useWallet } from "@/hooks/useWallet";
 import OnboardingSlider from "@/components/ui/OnboardingSlider";
 import UserSetup from "@/components/ui/UserSetup";
@@ -38,6 +38,12 @@ export default function GameApp() {
   const [skin, setSkin]             = useState<SkinId>("default");
   const [tab, setTab]               = useState<Tab>("farm");
   const [toast, setToast]           = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const switchTab = useCallback((t: Tab) => {
+    setTab(t);
+    scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
 
   // 1. Onboarding
   if (!onboarded) {
@@ -162,7 +168,7 @@ export default function GameApp() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 pb-24 space-y-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 pb-24 space-y-4">
         {tab === "farm"    && <FarmView onPointsEarned={handlePointsEarned} />}
         {tab === "profile" && (
           <Profile
@@ -173,7 +179,7 @@ export default function GameApp() {
             level={level}
             skin={skin}
             usdtBalance={wallet.usdtBalance}
-            onChangeSkin={() => setTab("shop")}
+            onChangeSkin={() => switchTab("shop")}
           />
         )}
         {tab === "ranking" && (
@@ -196,7 +202,7 @@ export default function GameApp() {
             { id: "shop",    emoji: "🛍️",  label: "Tienda" },
           ] as { id: Tab; emoji: string; label: string }[]
         ).map((item) => (
-          <button key={item.id} onClick={() => setTab(item.id)}
+          <button key={item.id} onClick={() => switchTab(item.id)}
             className={`flex-1 flex flex-col items-center py-2.5 text-xs font-semibold transition ${
               tab === item.id
                 ? "text-green-700 border-t-2 border-green-500 -mt-0.5 bg-green-50"
