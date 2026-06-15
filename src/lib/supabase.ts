@@ -24,7 +24,7 @@ export async function getPlayer(wallet: string): Promise<PlayerRow | null> {
     .from("players")
     .select("*")
     .eq("wallet_address", wallet)
-    .single();
+    .maybeSingle();
   return data;
 }
 
