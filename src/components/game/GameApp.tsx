@@ -100,14 +100,18 @@ export default function GameApp() {
           setUsername(u);
           setCountryCode(cc);
           if (walletReal.address) {
-            await upsertPlayer({
-              wallet_address: walletReal.address,
-              username: u,
-              country_code: cc,
-              points: 0,
-              level: 1,
-              skin: "default",
-            });
+            try {
+              await upsertPlayer({
+                wallet_address: walletReal.address,
+                username: u,
+                country_code: cc,
+                points: 0,
+                level: 1,
+                skin: "default",
+              });
+            } catch (e) {
+              console.warn("Supabase upsert failed:", e);
+            }
           }
         }}
       />
