@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useWallet } from "@/hooks/useWallet";
 import OnboardingSlider from "@/components/ui/OnboardingSlider";
 import UserSetup from "@/components/ui/UserSetup";
@@ -9,6 +9,7 @@ import Profile from "@/components/ui/Profile";
 import FarmView from "@/components/game/FarmView";
 import { COUNTRIES } from "@/lib/constants";
 import type { SkinId } from "@/types";
+import { getPlayer, upsertPlayer, updatePoints } from "@/lib/supabase";
 
 type Tab = "farm" | "profile" | "ranking" | "shop";
 
@@ -38,6 +39,20 @@ export default function GameApp() {
   const [tab, setTab]               = useState<Tab>("farm");
   const [toast, setToast]           = useState<{ msg: string; type: "points" | "level" } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Cargar perfil existente de Supabase al conectar wallet
+  useEffect(() => {
+    if (!walletReal.address || username) return;
+    getPlayer(walletReal.address).then((p) => {
+      if (p) {
+        setUsername(p.username);
+        setCountryCode(p.country_code);
+        setPoints(p.points);
+        setLevel(p.level);
+        setSkin(p.skin as SkinId);
+      }
+    });
+  }, [walletReal.address, username]);
 
   const switchTab = useCallback((t: Tab) => {
     setTab(t);
@@ -77,13 +92,23 @@ export default function GameApp() {
     );
   }
 
-  // 3. Setup de usuario (nombre + país) — se guarda localmente, Supabase después
+  // 3. Setup de usuario (nombre + país) → guarda en Supabase
   if (!username) {
     return (
       <UserSetup
-        onDone={(u, cc) => {
+        onDone={async (u, cc) => {
           setUsername(u);
           setCountryCode(cc);
+          if (walletReal.address) {
+            await upsertPlayer({
+              wallet_address: walletReal.address,
+              username: u,
+              country_code: cc,
+              points: 0,
+              level: 1,
+              skin: "default",
+            });
+          }
         }}
       />
     );
@@ -104,8 +129,10 @@ export default function GameApp() {
       if (newLevel > level) {
         setLevel(newLevel);
         showToast(`¡Subiste al nivel ${newLevel}!`, "level");
+        if (walletReal.address) updatePoints(walletReal.address, next, newLevel);
       } else {
         showToast(`+${earned} pts`, "points");
+        if (walletReal.address) updatePoints(walletReal.address, next, level);
       }
       return next;
     });
