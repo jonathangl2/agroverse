@@ -71,16 +71,6 @@ export default function GameApp() {
           {wallet.isMiniPayEnv && (
             <p className="text-green-600 text-sm animate-pulse">Conectando con MiniPay...</p>
           )}
-          <div className="flex items-center gap-2">
-            <div className="flex-1 h-px bg-green-200" />
-            <span className="text-green-400 text-xs">o</span>
-            <div className="flex-1 h-px bg-green-200" />
-          </div>
-          <button onClick={() => setDemoMode(true)}
-            className="w-full bg-white hover:bg-amber-50 border-2 border-amber-300 text-amber-700 px-8 py-3 rounded-2xl font-semibold text-base shadow transition">
-            🎮 Explorar en modo demo
-          </button>
-          <p className="text-green-400 text-xs">Sin wallet · Sin transacciones</p>
         </div>
         {wallet.error && <p className="text-red-500 text-sm mt-3">{wallet.error}</p>}
       </div>
@@ -130,7 +120,7 @@ export default function GameApp() {
     <div className="min-h-screen flex flex-col" style={{ background: "#fef9f0" }}>
 
       {/* Barra superior fija */}
-      <div className="fixed top-0 left-0 right-0 z-40 shadow-md">
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-40 shadow-md">
         <div className="flex items-center bg-green-700 px-4 py-2.5 gap-2">
           {/* Logo + nombre — lado izquierdo */}
           <img src="/assets/logo.png" alt="AgroVerse" className="w-7 h-7 shrink-0" />
@@ -210,7 +200,7 @@ export default function GameApp() {
         {tab === "shop" && <Marketplace currentSkin={skin} onBuy={handleBuySkin} usdcBalance={wallet.usdcBalance} />}
       </div>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-amber-200 flex shadow-lg">
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t-2 border-amber-200 flex shadow-lg">
         {(
           [
             { id: "farm",    emoji: "🌾", label: "Mi Finca" },
