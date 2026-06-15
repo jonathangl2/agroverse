@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { CROPS, GAME_CONFIG } from "@/lib/constants";
 import type { Plot, CropId } from "@/types";
+import { useBuySeed } from "@/hooks/useContract";
 
 // Animación slide-up para el modal
 const sheetStyle: React.CSSProperties = {
@@ -14,6 +15,7 @@ const overlayStyle: React.CSSProperties = {
 
 interface Props {
   onPointsEarned: (pts: number) => void;
+  demoMode: boolean;
 }
 
 function initPlots(): Plot[] {
@@ -38,11 +40,13 @@ function timeLeft(readyAt: number) {
 
 const ALL_CROPS = Object.values(CROPS);
 
-export default function FarmView({ onPointsEarned }: Props) {
+export default function FarmView({ onPointsEarned, demoMode }: Props) {
   const [plots, setPlots]       = useState<Plot[]>(initPlots());
   const [selected, setSelected] = useState<number | null>(null);
   const [premiumToast, setPremiumToast] = useState(false);
   const plotsRef = useRef(plots);
+  const { buySeed, status: txStatus, txHash, error: txError, reset: resetTx } = useBuySeed();
+  const pendingPlant = useRef<{ plotId: number; cropId: CropId } | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -60,7 +64,18 @@ export default function FarmView({ onPointsEarned }: Props) {
     return () => clearInterval(id);
   }, []);
 
-  const plant = (plotId: number, cropId: CropId, premium = false) => {
+  // Cuando la tx on-chain confirma, plantamos localmente
+  useEffect(() => {
+    if (txStatus === "success" && pendingPlant.current) {
+      const { plotId, cropId } = pendingPlant.current;
+      _plantLocal(plotId, cropId, true);
+      pendingPlant.current = null;
+      setPremiumToast(true);
+      setTimeout(() => { setPremiumToast(false); resetTx(); }, 3000);
+    }
+  }, [txStatus, resetTx]);
+
+  const _plantLocal = (plotId: number, cropId: CropId, premium: boolean) => {
     const crop = CROPS[cropId];
     const growMs = premium
       ? crop.growTimeHours * 9 * 1000
@@ -74,10 +89,24 @@ export default function FarmView({ onPointsEarned }: Props) {
     plotsRef.current = updated;
     setPlots([...updated]);
     setSelected(null);
-    if (premium) {
+  };
+
+  const plant = async (plotId: number, cropId: CropId, premium = false) => {
+    if (!premium) {
+      _plantLocal(plotId, cropId, false);
+      return;
+    }
+    // Demo mode: simular sin tx
+    if (demoMode) {
+      _plantLocal(plotId, cropId, true);
       setPremiumToast(true);
       setTimeout(() => setPremiumToast(false), 2500);
+      return;
     }
+    // Real: llamar contrato
+    pendingPlant.current = { plotId, cropId };
+    setSelected(null);
+    await buySeed(cropId, CROPS[cropId].seedCostUSDT);
   };
 
   const harvest = (plotId: number) => {
@@ -94,7 +123,48 @@ export default function FarmView({ onPointsEarned }: Props) {
   return (
     <div className="flex flex-col gap-3">
 
-      {premiumToast && (
+      {/* ── Estado de transacción on-chain ── */}
+      {(txStatus === "approving" || txStatus === "confirming") && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-6 mx-6 flex flex-col items-center gap-3 shadow-2xl">
+            <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-green-800 font-bold text-base text-center">
+              {txStatus === "approving" ? "Aprobando USDC..." : "Confirmando siembra..."}
+            </p>
+            <p className="text-gray-400 text-xs text-center">No cierres la app</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Tx exitosa ── */}
+      {txStatus === "success" && txHash && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-grow-pop w-72">
+          <div className="bg-white border-2 border-green-400 rounded-2xl px-4 py-3 shadow-xl">
+            <p className="text-green-700 font-bold text-sm">✅ Semilla premium activada</p>
+            <a
+              href={`https://celo-sepolia.blockscout.com/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 text-xs underline"
+            >
+              Ver en Blockscout →
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* ── Error de tx ── */}
+      {txStatus === "error" && txError && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-grow-pop w-72">
+          <div className="bg-white border-2 border-red-400 rounded-2xl px-4 py-3 shadow-xl">
+            <p className="text-red-600 font-bold text-sm">❌ Error en la transacción</p>
+            <p className="text-gray-500 text-xs mt-1 truncate">{txError}</p>
+            <button onClick={resetTx} className="text-blue-500 text-xs mt-1 underline">Reintentar</button>
+          </div>
+        </div>
+      )}
+
+      {premiumToast && txStatus !== "success" && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-amber-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg flex items-center gap-2 animate-grow-pop">
           ⭐ Semilla premium — crecimiento 4x más rápido!
         </div>

@@ -2,7 +2,7 @@
 import { useWallet } from "@/hooks/useWallet";
 
 export default function WalletBar() {
-  const { address, usdtBalance, isConnected, isMiniPayEnv, isLoading, connect } = useWallet();
+  const { address, usdcBalance, isConnected, isMiniPayEnv, isLoading, connect } = useWallet();
   const shortAddress = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : null;
 
   return (
@@ -15,7 +15,7 @@ export default function WalletBar() {
         {isConnected ? (
           <>
             <span className="text-green-100 font-mono text-xs bg-green-800/50 px-2 py-1 rounded-full">
-              💵 {usdtBalance} USDT
+              💵 {usdcBalance} USDT
             </span>
             <span className="bg-white/20 text-white px-2 py-1 rounded-full text-xs font-mono">
               {shortAddress}

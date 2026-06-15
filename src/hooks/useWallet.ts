@@ -1,13 +1,12 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { getWalletClient, isMiniPay, publicClient } from "@/lib/viem";
-import { CELO_CONFIG } from "@/lib/constants";
+import { getWalletClient, isMiniPay, publicClient, USDC_ADDRESS, activeChain } from "@/lib/viem";
 import { formatUnits } from "viem";
+import { ERC20_ABI } from "@/lib/viem";
 
 interface WalletState {
   address: string | null;
-  usdtBalance: string;
-  usdmBalance: string;
+  usdcBalance: string;
   isConnected: boolean;
   isMiniPayEnv: boolean;
   isLoading: boolean;
@@ -17,15 +16,13 @@ interface WalletState {
 export function useWallet() {
   const [state, setState] = useState<WalletState>({
     address: null,
-    usdtBalance: "0.00",
-    usdmBalance: "0.00",
+    usdcBalance: "0.00",
     isConnected: false,
     isMiniPayEnv: false,
     isLoading: false,
     error: null,
   });
 
-  // Detectar MiniPay y auto-conectar
   useEffect(() => {
     const miniPay = isMiniPay();
     setState((s) => ({ ...s, isMiniPayEnv: miniPay }));
@@ -33,11 +30,32 @@ export function useWallet() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const fetchBalances = useCallback(async (address: string) => {
+    try {
+      const raw = await publicClient.readContract({
+        address: USDC_ADDRESS,
+        abi: ERC20_ABI,
+        functionName: "balanceOf",
+        args: [address as `0x${string}`],
+      });
+      setState((s) => ({
+        ...s,
+        usdcBalance: parseFloat(formatUnits(raw as bigint, 6)).toFixed(2),
+      }));
+    } catch { /* silencioso */ }
+  }, []);
+
   const connect = useCallback(async () => {
     setState((s) => ({ ...s, isLoading: true, error: null }));
     try {
-      const client = getWalletClient();
-      const [address] = await client.getAddresses();
+      const walletClient = getWalletClient();
+
+      // Pedir al usuario cambiar a la red correcta si es necesario
+      try {
+        await walletClient.switchChain({ id: activeChain.id });
+      } catch { /* si no soporta switchChain lo ignoramos */ }
+
+      const [address] = await walletClient.getAddresses();
       if (!address) throw new Error("No se pudo obtener la dirección");
 
       await fetchBalances(address);
@@ -49,50 +67,12 @@ export function useWallet() {
         error: err instanceof Error ? err.message : "Error al conectar",
       }));
     }
-  }, []);
-
-  const fetchBalances = async (address: string) => {
-    try {
-      const ERC20_ABI = [
-        {
-          name: "balanceOf",
-          type: "function" as const,
-          stateMutability: "view" as const,
-          inputs: [{ name: "account", type: "address" as const }],
-          outputs: [{ name: "", type: "uint256" as const }],
-        },
-      ];
-
-      const [usdt, usdm] = await Promise.all([
-        publicClient.readContract({
-          address: CELO_CONFIG.USDT_ADDRESS,
-          abi: ERC20_ABI,
-          functionName: "balanceOf",
-          args: [address as `0x${string}`],
-        }),
-        publicClient.readContract({
-          address: CELO_CONFIG.USDM_ADDRESS,
-          abi: ERC20_ABI,
-          functionName: "balanceOf",
-          args: [address as `0x${string}`],
-        }),
-      ]);
-
-      setState((s) => ({
-        ...s,
-        usdtBalance: parseFloat(formatUnits(usdt as bigint, 6)).toFixed(2),
-        usdmBalance: parseFloat(formatUnits(usdm as bigint, 18)).toFixed(2),
-      }));
-    } catch {
-      // Silencioso — balances quedan en 0.00
-    }
-  };
+  }, [fetchBalances]);
 
   const disconnect = useCallback(() => {
     setState({
       address: null,
-      usdtBalance: "0.00",
-      usdmBalance: "0.00",
+      usdcBalance: "0.00",
       isConnected: false,
       isMiniPayEnv: isMiniPay(),
       isLoading: false,

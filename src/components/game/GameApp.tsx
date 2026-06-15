@@ -14,8 +14,7 @@ type Tab = "farm" | "profile" | "ranking" | "shop";
 
 const DEMO_WALLET = {
   address: "0xDemo1234...5678",
-  usdtBalance: "5.00",
-  usdmBalance: "2.50",
+  usdcBalance: "5.00",
   isConnected: true,
   isMiniPayEnv: false,
   isLoading: false,
@@ -187,7 +186,7 @@ export default function GameApp() {
       )}
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 pb-24 space-y-4">
-        {tab === "farm"    && <FarmView onPointsEarned={handlePointsEarned} />}
+        {tab === "farm"    && <FarmView onPointsEarned={handlePointsEarned} demoMode={demoMode} />}
         {tab === "profile" && (
           <Profile
             address={wallet.address ?? "0x0000"}
@@ -196,7 +195,7 @@ export default function GameApp() {
             points={points}
             level={level}
             skin={skin}
-            usdtBalance={wallet.usdtBalance}
+            usdcBalance={wallet.usdcBalance}
             onChangeSkin={() => switchTab("shop")}
           />
         )}
@@ -208,7 +207,7 @@ export default function GameApp() {
             countryFlag={countryFlag}
           />
         )}
-        {tab === "shop" && <Marketplace currentSkin={skin} onBuy={handleBuySkin} usdtBalance={wallet.usdtBalance} />}
+        {tab === "shop" && <Marketplace currentSkin={skin} onBuy={handleBuySkin} usdcBalance={wallet.usdcBalance} />}
       </div>
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-amber-200 flex shadow-lg">

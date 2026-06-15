@@ -2,7 +2,7 @@
 import { SKINS } from "@/lib/constants";
 import type { SkinId } from "@/types";
 
-interface Props { currentSkin: SkinId; onBuy: (skinId: SkinId) => void; usdtBalance: string; }
+interface Props { currentSkin: SkinId; onBuy: (skinId: SkinId) => void; usdcBalance: string; }
 
 const RARITY_STYLE = {
   common: { badge: "bg-gray-100 text-gray-500 border-gray-300",   card: "border-gray-200" },
@@ -14,8 +14,8 @@ const SKIN_AVATAR: Record<SkinId, string> = {
   default: "👨‍🌾", ruana_roja: "🧣", sombrero_aguadeno: "👒", overol_verde: "🥋",
 };
 
-export default function Marketplace({ currentSkin, onBuy, usdtBalance }: Props) {
-  const balance = parseFloat(usdtBalance);
+export default function Marketplace({ currentSkin, onBuy, usdcBalance }: Props) {
+  const balance = parseFloat(usdcBalance);
   return (
     <div className="flex flex-col gap-4">
       <div className="text-center">
@@ -25,7 +25,7 @@ export default function Marketplace({ currentSkin, onBuy, usdtBalance }: Props) 
 
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between">
         <span className="text-amber-700 text-sm">Tu balance</span>
-        <span className="text-green-700 font-bold font-mono">{usdtBalance} USDT</span>
+        <span className="text-green-700 font-bold font-mono">{usdcBalance} USDT</span>
       </div>
 
       <div className="space-y-3">

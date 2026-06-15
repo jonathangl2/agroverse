@@ -1,5 +1,6 @@
 "use client";
 import type { RankingEntry } from "@/types";
+import { usePrizePool } from "@/hooks/useContract";
 
 const MOCK_RANKING: RankingEntry[] = [
   { position: 1, address: "0xABc1", username: "KenyanFarmer",   countryCode: "KE", countryFlag: "🇰🇪", points: 4820, level: 12, skin: "sombrero_aguadeno" },
@@ -22,6 +23,8 @@ interface Props {
 }
 
 export default function Ranking({ currentAddress, currentPoints, username, countryFlag }: Props) {
+  const prizePool = usePrizePool();
+
   return (
     <div className="flex flex-col gap-4">
       <div className="text-center">
@@ -31,8 +34,11 @@ export default function Ranking({ currentAddress, currentPoints, username, count
 
       <div className="bg-amber-100 border-2 border-amber-300 rounded-2xl p-3 text-center">
         <p className="text-amber-800 text-sm font-bold">🎁 Premio del mes</p>
+        <p className="text-amber-600 font-mono font-black text-xl mt-1">
+          {prizePool !== null ? `${prizePool} USDC` : "Cargando..."}
+        </p>
         <p className="text-amber-700 text-xs mt-1">
-          Top 3 recibe <strong>USDT real</strong> directo a su wallet
+          Top 3 recibe <strong>USDC real</strong> directo a su wallet
         </p>
         <p className="text-amber-500 text-xs mt-0.5">Reset: 30 Jun 2026</p>
       </div>
