@@ -77,7 +77,7 @@ export default function GameApp() {
     );
   }
 
-  // 3. Setup de usuario (nombre + país)
+  // 3. Setup de usuario (nombre + país) — se guarda localmente, Supabase después
   if (!username) {
     return (
       <UserSetup
