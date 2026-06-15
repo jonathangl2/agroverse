@@ -262,7 +262,7 @@ export default function FarmView({ onPointsEarned, demoMode }: Props) {
 
           {/* Sheet con slide-up */}
           <div
-            className="relative w-full max-w-md bg-white rounded-t-3xl shadow-2xl flex flex-col"
+            className="relative w-full max-w-[430px] bg-white rounded-t-3xl shadow-2xl flex flex-col"
             style={{ maxHeight: "80vh", ...sheetStyle }}
             onClick={(e) => e.stopPropagation()}
           >
