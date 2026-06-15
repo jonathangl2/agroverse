@@ -4,6 +4,7 @@ import Image from "next/image";
 import { CROPS, GAME_CONFIG } from "@/lib/constants";
 import type { Plot, CropId } from "@/types";
 import { useBuySeed } from "@/hooks/useContract";
+import { recordPurchase } from "@/lib/supabase";
 
 // Animación slide-up para el modal
 const sheetStyle: React.CSSProperties = {
@@ -16,6 +17,7 @@ const overlayStyle: React.CSSProperties = {
 interface Props {
   onPointsEarned: (pts: number) => void;
   demoMode: boolean;
+  walletAddress?: string | null;
 }
 
 function initPlots(): Plot[] {
@@ -40,7 +42,7 @@ function timeLeft(readyAt: number) {
 
 const ALL_CROPS = Object.values(CROPS);
 
-export default function FarmView({ onPointsEarned, demoMode }: Props) {
+export default function FarmView({ onPointsEarned, demoMode, walletAddress }: Props) {
   const [plots, setPlots]       = useState<Plot[]>(initPlots());
   const [selected, setSelected] = useState<number | null>(null);
   const [premiumToast, setPremiumToast] = useState(false);
@@ -64,16 +66,20 @@ export default function FarmView({ onPointsEarned, demoMode }: Props) {
     return () => clearInterval(id);
   }, []);
 
-  // Cuando la tx on-chain confirma, plantamos localmente
+  // Cuando la tx on-chain confirma, plantamos localmente y guardamos en Supabase
   useEffect(() => {
-    if (txStatus === "success" && pendingPlant.current) {
+    if (txStatus === "success" && pendingPlant.current && txHash) {
       const { plotId, cropId } = pendingPlant.current;
       _plantLocal(plotId, cropId, true);
+      // Guardar compra en Supabase
+      if (walletAddress) {
+        recordPurchase(walletAddress, cropId, txHash, CROPS[cropId].seedCostUSDT).catch(console.warn);
+      }
       pendingPlant.current = null;
       setPremiumToast(true);
       setTimeout(() => { setPremiumToast(false); resetTx(); }, 5000);
     }
-  }, [txStatus, resetTx]);
+  }, [txStatus, txHash, resetTx, walletAddress]);
 
   const _plantLocal = (plotId: number, cropId: CropId, premium: boolean) => {
     const crop = CROPS[cropId];

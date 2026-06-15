@@ -207,7 +207,7 @@ export default function GameApp() {
       )}
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 pb-24 space-y-4">
-        {tab === "farm"    && <FarmView onPointsEarned={handlePointsEarned} demoMode={demoMode} />}
+        {tab === "farm"    && <FarmView onPointsEarned={handlePointsEarned} demoMode={demoMode} walletAddress={walletReal.address} />}
         {tab === "profile" && (
           <Profile
             address={wallet.address ?? "0x0000"}
