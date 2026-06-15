@@ -123,7 +123,7 @@ export default function GameApp() {
 
   const showToast = (msg: string, type: "points" | "level" = "points") => {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 2500);
+    setTimeout(() => setToast(null), 4500);
   };
 
   const handlePointsEarned = (earned: number) => {

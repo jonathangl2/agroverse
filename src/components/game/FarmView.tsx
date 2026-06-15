@@ -71,7 +71,7 @@ export default function FarmView({ onPointsEarned, demoMode }: Props) {
       _plantLocal(plotId, cropId, true);
       pendingPlant.current = null;
       setPremiumToast(true);
-      setTimeout(() => { setPremiumToast(false); resetTx(); }, 3000);
+      setTimeout(() => { setPremiumToast(false); resetTx(); }, 5000);
     }
   }, [txStatus, resetTx]);
 
@@ -141,14 +141,6 @@ export default function FarmView({ onPointsEarned, demoMode }: Props) {
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-grow-pop w-72">
           <div className="bg-white border-2 border-green-400 rounded-2xl px-4 py-3 shadow-xl">
             <p className="text-green-700 font-bold text-sm">✅ Semilla premium activada</p>
-            <a
-              href={`https://celo-sepolia.blockscout.com/tx/${txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 text-xs underline"
-            >
-              Ver en Blockscout →
-            </a>
           </div>
         </div>
       )}
