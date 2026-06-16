@@ -74,7 +74,7 @@ export default function GameApp() {
         <h1 className="text-3xl font-bold text-green-800 mb-1">AgroVerse</h1>
         <p className="text-green-600 text-sm mb-1">Season 1 · Global</p>
         <p className="text-green-700/80 text-sm mb-8 max-w-xs">
-          Cultiva desde tu país y compite con agricultores de todo el mundo. Gana USDT real.
+          Cultiva desde tu país y compite con agricultores de todo el mundo. Gana USDC real.
         </p>
         <div className="w-full max-w-xs flex flex-col gap-3">
           {!wallet.isMiniPayEnv && (

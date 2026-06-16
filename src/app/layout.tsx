@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AgroVerse — Cultiva y Gana",
-  description: "El juego de agricultura colombiana con recompensas en USDT. Disponible en MiniPay.",
+  description: "El juego de agricultura global con recompensas en USDC. Disponible en MiniPay.",
 };
 
 export default function RootLayout({

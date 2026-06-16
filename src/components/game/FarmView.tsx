@@ -304,7 +304,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress }: Pr
                       </span>
                       <div className="text-xl mb-1">✨</div>
                       <div className="text-amber-800 font-bold text-xs">Premium</div>
-                      <div className="text-amber-600 font-bold text-xs mt-0.5">{c.seedCostUSDT} USDT</div>
+                      <div className="text-amber-600 font-bold text-xs mt-0.5">{c.seedCostUSDT} USDC</div>
                       <div className="text-amber-500 text-xs">
                         ⚡ {Math.floor(c.growTimeHours / 4)}h · +{Math.floor(c.pointsReward * 1.6)} pts
                       </div>

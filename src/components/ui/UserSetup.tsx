@@ -1,60 +1,29 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { COUNTRIES } from "@/lib/constants";
-import { supabase } from "@/lib/supabase";
 
 interface Props {
   onDone: (username: string, countryCode: string) => void;
 }
 
+// Nombres reservados simples para demo
 const RESERVED = ["admin", "agroverse", "test", "root"];
 
 export default function UserSetup({ onDone }: Props) {
-  const [username, setUsername]       = useState("");
+  const [username, setUsername] = useState("");
   const [countryCode, setCountryCode] = useState("");
-  const [error, setError]             = useState("");
-  const [checking, setChecking]       = useState(false);
-  const [available, setAvailable]     = useState<boolean | null>(null);
-  const [submitting, setSubmitting]   = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [error, setError] = useState("");
 
   const selectedCountry = COUNTRIES.find((c) => c.code === countryCode);
 
-  // Verificar disponibilidad en Supabase con debounce
-  useEffect(() => {
-    const u = username.trim();
-    setAvailable(null);
-    setError("");
-    if (u.length < 3 || !/^[a-zA-Z0-9_]+$/.test(u)) return;
-    if (RESERVED.includes(u.toLowerCase())) { setAvailable(false); setError("Nombre reservado"); return; }
-
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(async () => {
-      setChecking(true);
-      try {
-        const { data } = await supabase
-          .from("players")
-          .select("username")
-          .eq("username", u)
-          .maybeSingle();
-        setAvailable(!data);
-        if (data) setError("❌ Ese nombre ya está en uso");
-      } catch {
-        setAvailable(null);
-      } finally {
-        setChecking(false);
-      }
-    }, 500);
-  }, [username]);
-
-  const validate = async () => {
+  const validate = () => {
     const u = username.trim();
     if (u.length < 3) { setError("Mínimo 3 caracteres"); return; }
     if (u.length > 20) { setError("Máximo 20 caracteres"); return; }
     if (!/^[a-zA-Z0-9_]+$/.test(u)) { setError("Solo letras, números y _"); return; }
+    if (RESERVED.includes(u.toLowerCase())) { setError("Ese nombre no está disponible"); return; }
     if (!countryCode) { setError("Selecciona tu país"); return; }
-    if (available === false) { setError("Ese nombre ya está en uso"); return; }
-    setSubmitting(true);
+    setError("");
     onDone(u, countryCode);
   };
 
@@ -75,23 +44,14 @@ export default function UserSetup({ onDone }: Props) {
           <label className="text-green-800 text-sm font-semibold mb-1.5 block">
             👤 Nombre de agricultor
           </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="ej. CafeteroGlobal"
-              maxLength={20}
-              className={`w-full border-2 rounded-xl px-4 py-3 text-green-900 font-semibold outline-none transition bg-white pr-10 ${
-                available === true ? "border-green-500" :
-                available === false ? "border-red-400" :
-                "border-green-300 focus:border-green-500"
-              }`}
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-lg">
-              {checking ? "⏳" : available === true ? "✅" : available === false ? "❌" : ""}
-            </span>
-          </div>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => { setUsername(e.target.value); setError(""); }}
+            placeholder="ej. CafeteroGlobal"
+            maxLength={20}
+            className="w-full border-2 border-green-300 focus:border-green-500 rounded-xl px-4 py-3 text-green-900 font-semibold outline-none transition bg-white"
+          />
           <p className="text-gray-400 text-xs mt-1 ml-1">{username.trim().length}/20 · Solo letras, números y _</p>
         </div>
 
@@ -134,9 +94,9 @@ export default function UserSetup({ onDone }: Props) {
         <button
           onClick={validate}
           className="w-full bg-green-600 hover:bg-green-500 text-white py-3.5 rounded-2xl font-bold text-base shadow-lg transition active:scale-95 disabled:opacity-40"
-          disabled={!username.trim() || !countryCode || checking || available === false || submitting}
+          disabled={!username.trim() || !countryCode}
         >
-          {submitting ? "Guardando..." : "🌱 Empezar a cultivar"}
+          🌱 Empezar a cultivar
         </button>
       </div>
     </div>

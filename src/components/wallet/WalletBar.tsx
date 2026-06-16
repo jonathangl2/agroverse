@@ -15,7 +15,7 @@ export default function WalletBar() {
         {isConnected ? (
           <>
             <span className="text-green-100 font-mono text-xs bg-green-800/50 px-2 py-1 rounded-full">
-              💵 {usdcBalance} USDT
+              💵 {usdcBalance} USDC
             </span>
             <span className="bg-white/20 text-white px-2 py-1 rounded-full text-xs font-mono">
               {shortAddress}

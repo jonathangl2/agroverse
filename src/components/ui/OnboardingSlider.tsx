@@ -22,8 +22,8 @@ const SLIDES = [
   },
   {
     emoji:    "💵",
-    title:    "Gana USDT real",
-    subtitle: "Cada cosecha suma puntos convertibles en USDT. Retira tus ganancias directo a tu wallet, sin intermediarios.",
+    title:    "Gana USDC real",
+    subtitle: "Cada cosecha suma puntos convertibles en USDC. Retira tus ganancias directo a tu wallet, sin intermediarios.",
     accent:   "#10b981",
     gradient: "from-emerald-900/80 via-emerald-800/60 to-transparent",
   },

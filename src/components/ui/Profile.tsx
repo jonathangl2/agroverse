@@ -65,8 +65,8 @@ export default function Profile({ address, username, countryCode, points, level,
         {[
           { label: "Nivel",   value: level,                  color: "text-green-700", bg: "bg-green-50  border-green-200" },
           { label: "Puntos",  value: points.toLocaleString(), color: "text-amber-600", bg: "bg-amber-50  border-amber-200" },
-          { label: "≈ USDT",  value: usdt,                   color: "text-lime-700",  bg: "bg-lime-50   border-lime-200"  },
-          { label: "Balance", value: `${usdcBalance} USDT`,  color: "text-blue-700",  bg: "bg-blue-50   border-blue-200"  },
+          { label: "≈ USDC",  value: usdt,                   color: "text-lime-700",  bg: "bg-lime-50   border-lime-200"  },
+          { label: "Balance", value: `${usdcBalance} USDC`,  color: "text-blue-700",  bg: "bg-blue-50   border-blue-200"  },
         ].map((stat) => (
           <div key={stat.label} className={`${stat.bg} border-2 rounded-2xl p-4 text-center`}>
             <p className="text-gray-500 text-xs mb-1">{stat.label}</p>
