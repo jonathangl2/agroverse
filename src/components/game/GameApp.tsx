@@ -30,7 +30,7 @@ export default function GameApp() {
   const [level, setLevel]             = useState(1);
   const [skin, setSkin]               = useState<SkinId>("default");
   const [tab, setTab]                 = useState<Tab>("farm");
-  const [toast, setToast]             = useState<{ msg: string; type: "points" | "level" } | null>(null);
+  const [toast, setToast]             = useState<{ msg: string; type: "points" | "level" | "skin" } | null>(null);
 
   // Fix 2: loading mientras validamos perfil en Supabase
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -146,7 +146,7 @@ export default function GameApp() {
   // 4. Juego principal
   const countryFlagUrl = flagUrl(countryCode);
 
-  const showToast = (msg: string, type: "points" | "level" = "points") => {
+  const showToast = (msg: string, type: "points" | "level" | "skin" = "points") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4500);
   };
@@ -169,7 +169,7 @@ export default function GameApp() {
 
   const handleBuySkin = (skinId: SkinId) => {
     setSkin(skinId);
-    showToast("🎨 ¡Skin equipada!");
+    showToast("🎨 ¡Skin equipada!", "skin");
   };
 
   // Fix 3: refrescar balance después de una compra
@@ -208,6 +208,18 @@ export default function GameApp() {
             <div>
               <p className="text-yellow-600 font-black text-lg leading-none">{toast.msg}</p>
               <p className="text-gray-400 text-xs mt-0.5">¡Cosecha exitosa!</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toast && toast.type === "skin" && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-grow-pop">
+          <div className="flex items-center gap-2 bg-white border-2 border-purple-300 rounded-2xl px-4 py-3 shadow-xl">
+            <span className="text-2xl">🎨</span>
+            <div>
+              <p className="text-purple-600 font-black text-lg leading-none">¡Skin equipada!</p>
+              <p className="text-gray-400 text-xs mt-0.5">Tu look ha cambiado</p>
             </div>
           </div>
         </div>
