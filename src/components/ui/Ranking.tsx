@@ -1,17 +1,9 @@
 "use client";
-import type { RankingEntry } from "@/types";
+import { useEffect, useState } from "react";
 import { usePrizePool } from "@/hooks/useContract";
-
-const MOCK_RANKING: RankingEntry[] = [
-  { position: 1, address: "0xABc1", username: "KenyanFarmer",   countryCode: "KE", countryFlag: "🇰🇪", points: 4820, level: 12, skin: "sombrero_aguadeno" },
-  { position: 2, address: "0xDEf2", username: "CafeteroGlobal", countryCode: "CO", countryFlag: "🇨🇴", points: 3950, level: 10, skin: "ruana_roja" },
-  { position: 3, address: "0xGHi3", username: "RiceFarmerVN",   countryCode: "VN", countryFlag: "🇻🇳", points: 3210, level: 9,  skin: "default" },
-  { position: 4, address: "0xJKl4", username: "NaijaGrower",    countryCode: "NG", countryFlag: "🇳🇬", points: 2890, level: 8,  skin: "overol_verde" },
-  { position: 5, address: "0xMNo5", username: "BrazilSoja",     countryCode: "BR", countryFlag: "🇧🇷", points: 2540, level: 7,  skin: "default" },
-  { position: 6, address: "0xPQr6", username: "IndiaWheat",     countryCode: "IN", countryFlag: "🇮🇳", points: 2100, level: 6,  skin: "ruana_roja" },
-  { position: 7, address: "0xSTu7", username: "MexMaizero",     countryCode: "MX", countryFlag: "🇲🇽", points: 1780, level: 5,  skin: "default" },
-  { position: 8, address: "0xVWx8", username: "GhanaYuca",      countryCode: "GH", countryFlag: "🇬🇭", points: 1450, level: 4,  skin: "default" },
-];
+import { getTopPlayers } from "@/lib/supabase";
+import { COUNTRIES } from "@/lib/constants";
+import type { PlayerRow } from "@/lib/supabase";
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 
@@ -24,6 +16,18 @@ interface Props {
 
 export default function Ranking({ currentAddress, currentPoints, username, countryFlag }: Props) {
   const prizePool = usePrizePool();
+  const [players, setPlayers] = useState<PlayerRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getTopPlayers(20).then((data) => {
+      setPlayers(data);
+      setLoading(false);
+    });
+  }, []);
+
+  const myPosition = players.findIndex((p) => p.wallet_address === currentAddress) + 1;
+  const topPoints = players[0]?.points ?? 1;
 
   return (
     <div className="flex flex-col gap-4">
@@ -43,43 +47,59 @@ export default function Ranking({ currentAddress, currentPoints, username, count
         <p className="text-amber-500 text-xs mt-0.5">Reset: 30 Jun 2026</p>
       </div>
 
-      {currentAddress && (
+      {/* Tu posición */}
+      {currentAddress && myPosition > 0 && (
         <div className="bg-green-50 border-2 border-green-300 rounded-2xl p-3">
           <p className="text-green-600 text-xs mb-1 font-medium">Tu posición</p>
           <div className="flex items-center justify-between">
             <span className="text-green-800 font-bold">
-              #{MOCK_RANKING.length + 1} · {countryFlag} {username ?? "Tú"}
+              #{myPosition} · {countryFlag} {username ?? "Tú"}
             </span>
             <span className="text-amber-600 font-mono font-bold">{currentPoints ?? 0} pts</span>
           </div>
           <div className="mt-2 bg-green-200 rounded-full h-2">
             <div className="bg-green-500 h-2 rounded-full transition-all"
-              style={{ width: `${Math.min(100, ((currentPoints ?? 0) / (MOCK_RANKING[0]?.points ?? 1)) * 100)}%` }} />
+              style={{ width: `${Math.min(100, ((currentPoints ?? 0) / topPoints) * 100)}%` }} />
           </div>
         </div>
       )}
 
+      {/* Lista */}
       <div className="space-y-2">
-        {MOCK_RANKING.map((entry) => (
-          <div key={entry.position}
-            className={`flex items-center gap-3 rounded-xl p-3 border ${
-              entry.position <= 3 ? "bg-amber-50 border-amber-300" : "bg-white border-gray-200"
-            }`}>
-            <span className="text-xl w-8 text-center">
-              {MEDAL[entry.position - 1] ?? `#${entry.position}`}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-green-900 font-semibold text-sm truncate">
-                {entry.countryFlag} {entry.username}
-              </p>
-              <p className="text-green-500 text-xs">Nivel {entry.level}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-amber-600 font-bold font-mono">{entry.points.toLocaleString()}</p>
-              <p className="text-gray-400 text-xs">pts</p>
-            </div>
+        {loading && (
+          <div className="flex items-center justify-center py-8 gap-2">
+            <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+            <p className="text-green-600 text-sm">Cargando ranking...</p>
           </div>
-        ))}
+        )}
+        {!loading && players.length === 0 && (
+          <p className="text-center text-gray-400 text-sm py-8">Aún no hay jugadores. ¡Sé el primero!</p>
+        )}
+        {!loading && players.map((p, i) => {
+          const flag = COUNTRIES.find((c) => c.code === p.country_code)?.flag ?? "🌍";
+          const isMe = p.wallet_address === currentAddress;
+          return (
+            <div key={p.wallet_address}
+              className={`flex items-center gap-3 rounded-xl p-3 border transition ${
+                isMe ? "bg-green-50 border-green-400" :
+                i < 3 ? "bg-amber-50 border-amber-300" : "bg-white border-gray-200"
+              }`}>
+              <span className="text-xl w-8 text-center">
+                {MEDAL[i] ?? `#${i + 1}`}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-green-900 font-semibold text-sm truncate">
+                  {flag} {p.username} {isMe && <span className="text-green-500 text-xs">· tú</span>}
+                </p>
+                <p className="text-green-500 text-xs">Nivel {p.level}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-amber-600 font-bold font-mono">{p.points.toLocaleString()}</p>
+                <p className="text-gray-400 text-xs">pts</p>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
