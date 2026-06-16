@@ -18,11 +18,10 @@ type Tab = "farm" | "profile" | "ranking" | "shop";
 export default function GameApp() {
   const walletReal = useWallet();
 
-  const [onboarded, setOnboarded] = useState(false);
+  const [onboarded, setOnboarded] = useState<boolean | null>(null);
 
-  // Fix 1: leer localStorage solo en cliente para evitar hydration mismatch
   useEffect(() => {
-    if (localStorage.getItem("ag_onboarded") === "1") setOnboarded(true);
+    setOnboarded(localStorage.getItem("ag_onboarded") === "1");
   }, []);
 
   const [username, setUsername]       = useState<string | null>(null);
@@ -64,12 +63,15 @@ export default function GameApp() {
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
-  // 1. Onboarding — solo si nunca lo ha visto
+  // 1. Aún leyendo localStorage — no renderizar nada para evitar flash
+  if (onboarded === null) return null;
+
+  // 2. Primera vez — mostrar tutorial
   if (!onboarded) {
     return <OnboardingSlider onFinish={handleOnboarded} />;
   }
 
-  // 2. Sin wallet — pantalla de conexión
+  // 3. Sin wallet — pantalla de conexión
   if (!walletReal.isConnected) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center"
@@ -91,6 +93,12 @@ export default function GameApp() {
           {walletReal.isMiniPayEnv && (
             <p className="text-green-600 text-sm animate-pulse">Conectando con MiniPay...</p>
           )}
+          <button
+            onClick={() => setOnboarded(false)}
+            className="text-green-600/70 text-sm underline underline-offset-2 mt-1"
+          >
+            ¿Primera vez? Ver tutorial
+          </button>
         </div>
         {walletReal.error && <p className="text-red-500 text-sm mt-3">{walletReal.error}</p>}
       </div>
