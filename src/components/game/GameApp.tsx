@@ -7,8 +7,10 @@ import Ranking from "@/components/ui/Ranking";
 import Marketplace from "@/components/ui/Marketplace";
 import Profile from "@/components/ui/Profile";
 import FarmView from "@/components/game/FarmView";
-import { COUNTRIES } from "@/lib/constants";
 import type { SkinId } from "@/types";
+
+const flagUrl = (code: string) =>
+  code === "OTHER" ? null : `https://flagcdn.com/w40/${code.toLowerCase()}.png`;
 import { getPlayer, upsertPlayer, updatePoints } from "@/lib/supabase";
 
 type Tab = "farm" | "profile" | "ranking" | "shop";
@@ -134,7 +136,7 @@ export default function GameApp() {
   }
 
   // 4. Juego principal
-  const countryFlag = COUNTRIES.find((c) => c.code === countryCode)?.flag ?? "🌍";
+  const countryFlagUrl = flagUrl(countryCode);
 
   const showToast = (msg: string, type: "points" | "level" = "points") => {
     setToast({ msg, type });
@@ -180,8 +182,11 @@ export default function GameApp() {
             <span className="text-yellow-300 font-bold text-xs font-mono">⭐ {points.toLocaleString()}</span>
             <span className="text-green-300 text-xs">pts</span>
           </div>
-          <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full max-w-[110px] truncate shrink-0">
-            {countryFlag} {username}
+          <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full max-w-[110px] truncate shrink-0 flex items-center gap-1">
+            {countryFlagUrl
+              ? <img src={countryFlagUrl} alt={countryCode} className="w-4 h-3 object-cover rounded-sm inline" />
+              : "🌍"}
+            {username}
           </span>
         </div>
       </div>
@@ -238,10 +243,10 @@ export default function GameApp() {
             currentAddress={walletReal.address}
             currentPoints={points}
             username={username}
-            countryFlag={countryFlag}
+            countryFlagUrl={countryFlagUrl}
           />
         )}
-        {tab === "shop" && <Marketplace currentSkin={skin} onBuy={handleBuySkin} usdcBalance={walletReal.usdcBalance} />}
+        {tab === "shop" && <Marketplace currentSkin={skin} onBuy={handleBuySkin} usdcBalance={walletReal.usdcBalance} walletAddress={walletReal.address} onPurchaseComplete={handlePurchaseComplete} />}
       </div>
 
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t-2 border-amber-200 flex shadow-lg">

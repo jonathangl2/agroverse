@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { CROPS, GAME_CONFIG } from "@/lib/constants";
+import { GAME_CONFIG } from "@/lib/constants";
 import type { Plot, CropId } from "@/types";
-import { useBuySeed } from "@/hooks/useContract";
-import { recordPurchase } from "@/lib/supabase";
+import type { CropRow } from "@/lib/supabase";
+import { usePaySeed } from "@/hooks/useContract";
+import { getCrops, recordPurchase } from "@/lib/supabase";
 
-// Animación slide-up para el modal
 const sheetStyle: React.CSSProperties = {
   animation: "sheet-up 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
 };
@@ -53,16 +53,25 @@ function timeLeft(readyAt: number) {
   return m > 0 ? `${m}m ${s}s` : `${s}s`;
 }
 
-const ALL_CROPS = Object.values(CROPS);
-
 export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPurchaseComplete }: Props) {
   const [plots, setPlots]       = useState<Plot[]>(initPlots());
   const [selected, setSelected] = useState<number | null>(null);
   const [premiumToast, setPremiumToast] = useState(false);
-  const plotsRef = useRef(plots);
-  const { buySeed, status: txStatus, txHash, error: txError, reset: resetTx } = useBuySeed();
+  const [crops, setCrops]       = useState<CropRow[]>([]);
+  const plotsRef  = useRef(plots);
+  const cropsRef  = useRef<Record<string, CropRow>>({});
+  const { paySeed, status: txStatus, txHash, error: txError, reset: resetTx } = usePaySeed();
   const pendingPlant = useRef<{ plotId: number; cropId: CropId } | null>(null);
 
+  // Cargar catálogo de cultivos desde Supabase
+  useEffect(() => {
+    getCrops().then((data) => {
+      setCrops(data);
+      cropsRef.current = Object.fromEntries(data.map((c) => [c.id, c]));
+    });
+  }, []);
+
+  // Timer de crecimiento
   useEffect(() => {
     const id = setInterval(() => {
       const updated = plotsRef.current.map((p) => {
@@ -79,14 +88,14 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
     return () => clearInterval(id);
   }, []);
 
-  // Cuando la tx on-chain confirma, plantamos localmente y guardamos en Supabase
+  // Cuando tx confirma → plantar localmente y registrar en Supabase
   useEffect(() => {
     if (txStatus === "success" && pendingPlant.current && txHash) {
       const { plotId, cropId } = pendingPlant.current;
+      const crop = cropsRef.current[cropId];
       _plantLocal(plotId, cropId, true);
-      // Guardar compra en Supabase
-      if (walletAddress) {
-        recordPurchase(walletAddress, cropId, txHash, CROPS[cropId].seedCostUSDT).catch(console.warn);
+      if (walletAddress && crop) {
+        recordPurchase(walletAddress, cropId, txHash, crop.seed_cost, crop.seed_cost_token).catch(console.warn);
       }
       pendingPlant.current = null;
       onPurchaseComplete?.();
@@ -96,10 +105,11 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
   }, [txStatus, txHash, resetTx, walletAddress]);
 
   const _plantLocal = (plotId: number, cropId: CropId, premium: boolean) => {
-    const crop = CROPS[cropId];
+    const crop = cropsRef.current[cropId];
+    if (!crop) return;
     const growMs = premium
-      ? crop.growTimeHours * 9 * 1000
-      : crop.growTimeHours * 36 * 1000;
+      ? crop.grow_time_hours * 9 * 1000
+      : crop.grow_time_hours * 36 * 1000;
     const now = Date.now();
     const updated = plotsRef.current.map((p) =>
       p.id === plotId
@@ -113,27 +123,28 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
   };
 
   const plant = async (plotId: number, cropId: CropId, premium = false) => {
+    const crop = cropsRef.current[cropId];
+    if (!crop) return;
     if (!premium) {
       _plantLocal(plotId, cropId, false);
       return;
     }
-    // Demo mode: simular sin tx
     if (demoMode) {
       _plantLocal(plotId, cropId, true);
       setPremiumToast(true);
       setTimeout(() => setPremiumToast(false), 2500);
       return;
     }
-    // Real: llamar contrato
     pendingPlant.current = { plotId, cropId };
     setSelected(null);
-    await buySeed(cropId, CROPS[cropId].seedCostUSDT);
+    await paySeed(cropId, crop.seed_cost);
   };
 
   const harvest = (plotId: number) => {
     const plot = plotsRef.current[plotId];
     if (!plot?.cropId) return;
-    onPointsEarned(CROPS[plot.cropId].pointsReward);
+    const crop = cropsRef.current[plot.cropId];
+    if (crop) onPointsEarned(crop.points_reward);
     const updated = plotsRef.current.map((p) =>
       p.id === plotId ? { id: plotId, state: "empty" as const } : p
     );
@@ -145,7 +156,6 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
   return (
     <div className="flex flex-col gap-3">
 
-      {/* ── Estado de transacción on-chain ── */}
       {(txStatus === "approving" || txStatus === "confirming") && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
           <div className="bg-white rounded-2xl p-6 mx-6 flex flex-col items-center gap-3 shadow-2xl">
@@ -158,7 +168,6 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
         </div>
       )}
 
-      {/* ── Tx exitosa ── */}
       {txStatus === "success" && txHash && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-grow-pop w-72">
           <div className="bg-white border-2 border-green-400 rounded-2xl px-4 py-3 shadow-xl">
@@ -167,7 +176,6 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
         </div>
       )}
 
-      {/* ── Error de tx ── */}
       {txStatus === "error" && txError && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 animate-grow-pop w-72">
           <div className="bg-white border-2 border-red-400 rounded-2xl px-4 py-3 shadow-xl">
@@ -196,7 +204,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
       </div>
 
       {plots.map((plot) => {
-        const crop     = plot.cropId ? CROPS[plot.cropId] : null;
+        const crop     = plot.cropId ? cropsRef.current[plot.cropId] : null;
         const progress = pct(plot);
         const isReady  = plot.state === "ready";
 
@@ -236,7 +244,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
 
                 {isReady && (
                   <p className="text-yellow-600 font-bold text-xs mt-0.5">
-                    ¡Lista para cosechar! +{crop?.pointsReward} pts
+                    ¡Lista para cosechar! +{crop?.points_reward} pts
                   </p>
                 )}
 
@@ -262,30 +270,23 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
                 </button>
               )}
             </div>
-
           </div>
         );
       })}
 
-      {/* ── Modal catálogo de cultivos ── */}
+      {/* Modal catálogo de cultivos */}
       {selected !== null && (
         <div className="fixed inset-0 z-50 flex items-end justify-center"
              onClick={() => setSelected(null)}>
-          {/* Overlay con fade */}
           <div className="absolute inset-0 bg-black/50" style={overlayStyle} />
-
-          {/* Sheet con slide-up */}
           <div
             className="relative w-full max-w-[430px] bg-white rounded-t-3xl shadow-2xl flex flex-col"
             style={{ maxHeight: "80vh", ...sheetStyle }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Handle */}
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-10 h-1 bg-gray-300 rounded-full" />
             </div>
-
-            {/* Header */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-amber-100">
               <p className="text-green-800 font-bold text-base">🌱 ¿Qué cultivamos?</p>
               <button onClick={() => setSelected(null)}
@@ -294,9 +295,14 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
               </button>
             </div>
 
-            {/* Scroll interno */}
             <div className="overflow-y-auto px-4 py-3 flex flex-col gap-4 pb-8">
-              {ALL_CROPS.map((c) => (
+              {crops.length === 0 && (
+                <div className="flex items-center justify-center py-8 gap-2">
+                  <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-green-600 text-sm">Cargando cultivos...</p>
+                </div>
+              )}
+              {crops.map((c) => (
                 <div key={c.id}>
                   <p className="text-xs text-gray-500 font-semibold mb-2 ml-1">
                     {c.emoji} {c.name}
@@ -309,22 +315,26 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
                       <div className="text-xl mb-1">🌱</div>
                       <div className="text-green-800 font-bold text-xs">Básica</div>
                       <div className="text-green-600 font-bold text-xs mt-0.5">Gratis</div>
-                      <div className="text-gray-400 text-xs">{c.growTimeHours}h · +{c.pointsReward} pts</div>
+                      <div className="text-gray-400 text-xs">{c.grow_time_hours}h · +{c.points_reward} pts</div>
                     </button>
-                    <button
-                      onClick={() => plant(selected, c.id, true)}
-                      className="bg-amber-50 border-2 border-amber-400 hover:border-amber-500 rounded-xl p-3 text-center transition active:scale-95 relative overflow-hidden"
-                    >
-                      <span className="absolute top-1.5 right-1.5 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                        ⭐ PRO
-                      </span>
-                      <div className="text-xl mb-1">✨</div>
-                      <div className="text-amber-800 font-bold text-xs">Premium</div>
-                      <div className="text-amber-600 font-bold text-xs mt-0.5">{c.seedCostUSDT} USDC</div>
-                      <div className="text-amber-500 text-xs">
-                        ⚡ {Math.floor(c.growTimeHours / 4)}h · +{Math.floor(c.pointsReward * 1.6)} pts
-                      </div>
-                    </button>
+                    {c.is_premium && (
+                      <button
+                        onClick={() => plant(selected, c.id, true)}
+                        className="bg-amber-50 border-2 border-amber-400 hover:border-amber-500 rounded-xl p-3 text-center transition active:scale-95 relative overflow-hidden"
+                      >
+                        <span className="absolute top-1.5 right-1.5 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                          ⭐ PRO
+                        </span>
+                        <div className="text-xl mb-1">✨</div>
+                        <div className="text-amber-800 font-bold text-xs">Premium</div>
+                        <div className="text-amber-600 font-bold text-xs mt-0.5">
+                          {c.seed_cost} {c.seed_cost_token}
+                        </div>
+                        <div className="text-amber-500 text-xs">
+                          ⚡ {Math.floor(c.grow_time_hours / 4)}h · +{Math.floor(c.points_reward * 1.6)} pts
+                        </div>
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

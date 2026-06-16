@@ -1,22 +1,22 @@
-// ─── País del jugador ─────────────────────────────────────────────────────────
+// ─── País ─────────────────────────────────────────────────────────────────────
 export interface Country {
-  code: string;   // ISO 3166-1 alpha-2
+  code: string;
   name: string;
-  flag: string;   // emoji
+  flag_url: string;
 }
 
-// ─── Cultivos globales ────────────────────────────────────────────────────────
-export type CropId =
-  | "cana" | "maiz" | "trigo" | "arroz" | "papa"
-  | "soya" | "yuca" | "tomate" | "banano" | "cafe";
+// ─── Cultivos (dinámico desde Supabase) ──────────────────────────────────────
+export type CropId = string; // ya no es un union type fijo
 
 export interface Crop {
   id: CropId;
   name: string;
   emoji: string;
-  growTimeHours: number;
-  pointsReward: number;
-  seedCostUSDT: number;
+  grow_time_hours: number;
+  points_reward: number;
+  seed_cost: number;
+  seed_cost_token: string;
+  is_premium: boolean;
 }
 
 // ─── Plot (parcela) ───────────────────────────────────────────────────────────
@@ -30,6 +30,20 @@ export interface Plot {
   readyAt?: number;
 }
 
+// ─── Skins (dinámico desde Supabase) ─────────────────────────────────────────
+export type SkinId = string; // ya no es un union type fijo
+
+export interface Skin {
+  id: SkinId;
+  name: string;
+  price: number;
+  price_token: string;
+  rarity: "common" | "rare" | "epic" | "legendary";
+  description: string;
+  emoji: string;
+  image_url?: string | null;
+}
+
 // ─── Jugador ──────────────────────────────────────────────────────────────────
 export interface Player {
   address: string;
@@ -40,17 +54,6 @@ export interface Player {
   plots: Plot[];
   skin: SkinId;
   createdAt: number;
-}
-
-// ─── Skins ────────────────────────────────────────────────────────────────────
-export type SkinId = "default" | "ruana_roja" | "sombrero_aguadeno" | "overol_verde";
-
-export interface Skin {
-  id: SkinId;
-  name: string;
-  priceUSDT: number;
-  rarity: "common" | "rare" | "epic";
-  description: string;
 }
 
 // ─── Ranking ──────────────────────────────────────────────────────────────────

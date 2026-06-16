@@ -2,8 +2,10 @@
 import { useEffect, useState } from "react";
 import { usePrizePool } from "@/hooks/useContract";
 import { getTopPlayers } from "@/lib/supabase";
-import { COUNTRIES } from "@/lib/constants";
 import type { PlayerRow } from "@/lib/supabase";
+
+const flagUrl = (code: string) =>
+  code === "OTHER" ? null : `https://flagcdn.com/w40/${code.toLowerCase()}.png`;
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 
@@ -11,10 +13,10 @@ interface Props {
   currentAddress?: string | null;
   currentPoints?: number;
   username?: string;
-  countryFlag?: string;
+  countryFlagUrl?: string | null;
 }
 
-export default function Ranking({ currentAddress, currentPoints, username, countryFlag }: Props) {
+export default function Ranking({ currentAddress, currentPoints, username, countryFlagUrl }: Props) {
   const prizePool = usePrizePool();
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,8 +54,12 @@ export default function Ranking({ currentAddress, currentPoints, username, count
         <div className="bg-green-50 border-2 border-green-300 rounded-2xl p-3">
           <p className="text-green-600 text-xs mb-1 font-medium">Tu posición</p>
           <div className="flex items-center justify-between">
-            <span className="text-green-800 font-bold">
-              #{myPosition} · {countryFlag} {username ?? "Tú"}
+            <span className="text-green-800 font-bold flex items-center gap-1">
+              #{myPosition} ·{" "}
+              {countryFlagUrl
+                ? <img src={countryFlagUrl} alt="" className="w-4 h-3 object-cover rounded-sm inline" />
+                : "🌍"}
+              {username ?? "Tú"}
             </span>
             <span className="text-amber-600 font-mono font-bold">{currentPoints ?? 0} pts</span>
           </div>
@@ -76,7 +82,7 @@ export default function Ranking({ currentAddress, currentPoints, username, count
           <p className="text-center text-gray-400 text-sm py-8">Aún no hay jugadores. ¡Sé el primero!</p>
         )}
         {!loading && players.map((p, i) => {
-          const flag = COUNTRIES.find((c) => c.code === p.country_code)?.flag ?? "🌍";
+          const flag = flagUrl(p.country_code);
           const isMe = p.wallet_address === currentAddress;
           return (
             <div key={p.wallet_address}
@@ -88,8 +94,9 @@ export default function Ranking({ currentAddress, currentPoints, username, count
                 {MEDAL[i] ?? `#${i + 1}`}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-green-900 font-semibold text-sm truncate">
-                  {flag} {p.username} {isMe && <span className="text-green-500 text-xs">· tú</span>}
+                <p className="text-green-900 font-semibold text-sm truncate flex items-center gap-1">
+                  {flag ? <img src={flag} alt="" className="w-4 h-3 object-cover rounded-sm inline" /> : "🌍"}
+                  {p.username} {isMe && <span className="text-green-500 text-xs">· tú</span>}
                 </p>
                 <p className="text-green-500 text-xs">Nivel {p.level}</p>
               </div>

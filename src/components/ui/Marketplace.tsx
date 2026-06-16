@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
-import { SKINS } from "@/lib/constants";
+import { useState, useEffect } from "react";
 import type { SkinId } from "@/types";
-import { useBuySkin } from "@/hooks/useContract";
-import { recordSkinPurchase } from "@/lib/supabase";
+import type { SkinRow } from "@/lib/supabase";
+import { getSkins, recordSkinPurchase } from "@/lib/supabase";
+import { usePaySkin } from "@/hooks/useContract";
 
 interface Props {
   currentSkin: SkinId;
@@ -13,34 +13,39 @@ interface Props {
   onPurchaseComplete?: () => void;
 }
 
-const RARITY_STYLE = {
-  common: { badge: "bg-gray-100 text-gray-500 border-gray-300",   card: "border-gray-200" },
-  rare:   { badge: "bg-blue-100 text-blue-600 border-blue-300",   card: "border-blue-200" },
-  epic:   { badge: "bg-purple-100 text-purple-600 border-purple-300", card: "border-purple-200" },
+const RARITY_STYLE: Record<string, { badge: string; card: string }> = {
+  common:    { badge: "bg-gray-100 text-gray-500 border-gray-300",      card: "border-gray-200"   },
+  rare:      { badge: "bg-blue-100 text-blue-600 border-blue-300",      card: "border-blue-200"   },
+  epic:      { badge: "bg-purple-100 text-purple-600 border-purple-300", card: "border-purple-200" },
+  legendary: { badge: "bg-amber-100 text-amber-600 border-amber-300",   card: "border-amber-200"  },
 };
-const RARITY_LABEL = { common: "Común", rare: "Rara", epic: "Épica" };
-const SKIN_AVATAR: Record<SkinId, string> = {
-  default: "👨‍🌾", ruana_roja: "🧣", sombrero_aguadeno: "👒", overol_verde: "🥋",
+const RARITY_LABEL: Record<string, string> = {
+  common: "Común", rare: "Rara", epic: "Épica", legendary: "Legendaria",
 };
 
 export default function Marketplace({ currentSkin, onBuy, usdcBalance, walletAddress, onPurchaseComplete }: Props) {
   const balance = parseFloat(usdcBalance);
-  const { buySkin, status: txStatus, error: txError, txHash, reset: resetTx } = useBuySkin();
+  const [skins, setSkins]     = useState<SkinRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [buyingId, setBuyingId] = useState<SkinId | null>(null);
+  const { paySkin, status: txStatus, error: txError, txHash, reset: resetTx } = usePaySkin();
 
-  const handleBuy = async (skinId: SkinId, price: number) => {
-    if (price === 0) { onBuy(skinId); return; }
-    setBuyingId(skinId);
+  useEffect(() => {
+    getSkins().then((data) => { setSkins(data); setLoading(false); });
+  }, []);
+
+  const handleBuy = async (skin: SkinRow) => {
+    if (skin.price === 0) { onBuy(skin.id); return; }
+    setBuyingId(skin.id);
     try {
-      await buySkin(skinId, price);
-      onBuy(skinId);
+      await paySkin(skin.id, skin.price);
+      onBuy(skin.id);
       onPurchaseComplete?.();
-      // Registrar en Supabase (best-effort, no bloquea UX)
       if (walletAddress) {
-        recordSkinPurchase(walletAddress, skinId, txHash ?? "", price).catch(console.warn);
+        recordSkinPurchase(walletAddress, skin.id, txHash ?? "", skin.price, skin.price_token).catch(console.warn);
       }
     } catch {
-      // error ya manejado en el hook
+      // error manejado en el hook
     } finally {
       setBuyingId(null);
       resetTx();
@@ -50,7 +55,6 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance, walletAdd
   return (
     <div className="flex flex-col gap-4">
 
-      {/* Overlay tx en curso */}
       {(txStatus === "approving" || txStatus === "confirming") && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
           <div className="bg-white rounded-2xl p-6 mx-6 flex flex-col items-center gap-3 shadow-2xl">
@@ -80,28 +84,37 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance, walletAdd
         <span className="text-green-700 font-bold font-mono">{usdcBalance} USDC</span>
       </div>
 
+      {loading && (
+        <div className="flex items-center justify-center py-10 gap-2">
+          <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+          <p className="text-purple-600 text-sm">Cargando skins...</p>
+        </div>
+      )}
+
       <div className="space-y-3">
-        {SKINS.map((skin) => {
-          const isActive = skin.id === currentSkin;
-          const canAfford = balance >= skin.priceUSDT;
-          const isBuying = buyingId === skin.id;
-          const style = RARITY_STYLE[skin.rarity];
+        {skins.map((skin) => {
+          const isActive  = skin.id === currentSkin;
+          const canAfford = balance >= skin.price;
+          const isBuying  = buyingId === skin.id;
+          const style     = RARITY_STYLE[skin.rarity] ?? RARITY_STYLE.common;
           return (
             <div key={skin.id} className={`bg-white border-2 ${style.card} rounded-2xl p-4 shadow-sm`}>
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-center text-4xl">
-                  {SKIN_AVATAR[skin.id]}
+                  {skin.image_url
+                    ? <img src={skin.image_url} alt={skin.name} className="w-full h-full object-cover rounded-xl" />
+                    : skin.emoji}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-green-900 font-bold text-sm">{skin.name}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full border ${style.badge}`}>
-                      {RARITY_LABEL[skin.rarity]}
+                      {RARITY_LABEL[skin.rarity] ?? skin.rarity}
                     </span>
                   </div>
                   <p className="text-gray-500 text-xs">{skin.description}</p>
                   <p className="text-green-700 font-bold mt-1">
-                    {skin.priceUSDT === 0 ? "Gratis" : `${skin.priceUSDT} USDC`}
+                    {skin.price === 0 ? "Gratis" : `${skin.price} ${skin.price_token}`}
                   </p>
                 </div>
                 <div>
@@ -111,15 +124,15 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance, walletAdd
                     </span>
                   ) : (
                     <button
-                      onClick={() => handleBuy(skin.id as SkinId, skin.priceUSDT)}
-                      disabled={(!canAfford && skin.priceUSDT > 0) || isBuying}
+                      onClick={() => handleBuy(skin)}
+                      disabled={(!canAfford && skin.price > 0) || isBuying}
                       className={`text-xs px-3 py-2 rounded-xl font-semibold transition active:scale-95 ${
-                        canAfford || skin.priceUSDT === 0
+                        canAfford || skin.price === 0
                           ? "bg-amber-500 hover:bg-amber-400 text-white"
                           : "bg-gray-100 text-gray-400 cursor-not-allowed"
                       }`}
                     >
-                      {isBuying ? "..." : skin.priceUSDT === 0 ? "Equipar" : canAfford ? "Comprar" : "Sin saldo"}
+                      {isBuying ? "..." : skin.price === 0 ? "Equipar" : canAfford ? "Comprar" : "Sin saldo"}
                     </button>
                   )}
                 </div>

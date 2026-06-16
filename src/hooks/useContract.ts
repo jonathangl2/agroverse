@@ -6,9 +6,9 @@ import ABI from "@/lib/AgroVerseABI.json";
 
 export type TxStatus = "idle" | "approving" | "confirming" | "success" | "error";
 
-// ── Leer prize pool en tiempo real ────────────────────────────────────────
+// ── Prize pool en tiempo real ─────────────────────────────────────────────
 export function usePrizePool() {
-  const [pool, setPool] = useState<string>("0.00");
+  const [pool, setPool] = useState<string | null>(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -22,53 +22,20 @@ export function usePrizePool() {
       } catch { /* silencioso */ }
     };
     fetch();
-    const id = setInterval(fetch, 30000); // refresca cada 30s
+    const id = setInterval(fetch, 30000);
     return () => clearInterval(id);
   }, []);
 
   return pool;
 }
 
-// ── Verificar si el jugador está registrado ───────────────────────────────
-export async function isPlayerRegistered(address: string): Promise<boolean> {
-  try {
-    const player = await publicClient.readContract({
-      address: CONTRACT_ADDRESS,
-      abi: ABI,
-      functionName: "getPlayer",
-      args: [address as `0x${string}`],
-    }) as { exists: boolean };
-    return player.exists;
-  } catch {
-    return false;
-  }
-}
+// ── Hook genérico de pago (approve + llamada al contrato) ─────────────────
+function useContractPay(functionName: "paySeed" | "paySkin") {
+  const [status, setStatus]   = useState<TxStatus>("idle");
+  const [txHash, setTxHash]   = useState<string | null>(null);
+  const [error, setError]     = useState<string | null>(null);
 
-// ── Registrar jugador on-chain ────────────────────────────────────────────
-export async function registerPlayer(username: string, countryCode: string): Promise<`0x${string}`> {
-  const walletClient = getWalletClient();
-  const [address] = await walletClient.getAddresses();
-
-  const hash = await walletClient.writeContract({
-    address: CONTRACT_ADDRESS,
-    abi: ABI,
-    functionName: "register",
-    args: [username, countryCode],
-    account: address,
-    chain: walletClient.chain,
-  });
-
-  await publicClient.waitForTransactionReceipt({ hash });
-  return hash;
-}
-
-// ── Comprar semilla premium ────────────────────────────────────────────────
-export function useBuySeed() {
-  const [status, setStatus] = useState<TxStatus>("idle");
-  const [txHash, setTxHash] = useState<string | null>(null);
-  const [error, setError]   = useState<string | null>(null);
-
-  const buySeed = async (seedId: string, priceUSDT: number) => {
+  const pay = async (ref: string, priceUsdc: number) => {
     setStatus("idle");
     setError(null);
     setTxHash(null);
@@ -76,11 +43,9 @@ export function useBuySeed() {
     try {
       const walletClient = getWalletClient();
       const [address] = await walletClient.getAddresses();
+      const amount = parseUnits(priceUsdc.toString(), 6);
 
-      // Precio en USDC (6 decimales)
-      const amount = parseUnits(priceUSDT.toString(), 6);
-
-      // Paso 1 — Approve
+      // Paso 1 — Approve USDC
       setStatus("approving");
       const approveTx = await walletClient.writeContract({
         address: USDC_ADDRESS,
@@ -92,13 +57,13 @@ export function useBuySeed() {
       });
       await publicClient.waitForTransactionReceipt({ hash: approveTx });
 
-      // Paso 2 — buySeed
+      // Paso 2 — paySeed o paySkin
       setStatus("confirming");
       const hash = await walletClient.writeContract({
         address: CONTRACT_ADDRESS,
         abi: ABI,
-        functionName: "buySeed",
-        args: [seedId],
+        functionName,
+        args: [ref, amount],
         account: address,
         chain: walletClient.chain,
       });
@@ -112,57 +77,16 @@ export function useBuySeed() {
     }
   };
 
-  return { buySeed, status, txHash, error, reset: () => setStatus("idle") };
+  return { pay, status, txHash, error, reset: () => { setStatus("idle"); setError(null); } };
 }
 
-// ── Comprar skin ───────────────────────────────────────────────────────────
-export function useBuySkin() {
-  const [status, setStatus] = useState<TxStatus>("idle");
-  const [txHash, setTxHash] = useState<string | null>(null);
-  const [error, setError]   = useState<string | null>(null);
+// ── Hooks públicos ────────────────────────────────────────────────────────
+export function usePaySeed() {
+  const { pay, ...rest } = useContractPay("paySeed");
+  return { paySeed: pay, ...rest };
+}
 
-  const buySkin = async (skinId: string, priceUSDC: number) => {
-    setStatus("idle");
-    setError(null);
-    setTxHash(null);
-
-    try {
-      const walletClient = getWalletClient();
-      const [address] = await walletClient.getAddresses();
-
-      const amount = parseUnits(priceUSDC.toString(), 6);
-
-      // Paso 1 — Approve
-      setStatus("approving");
-      const approveTx = await walletClient.writeContract({
-        address: USDC_ADDRESS,
-        abi: ERC20_ABI,
-        functionName: "approve",
-        args: [CONTRACT_ADDRESS, amount],
-        account: address,
-        chain: walletClient.chain,
-      });
-      await publicClient.waitForTransactionReceipt({ hash: approveTx });
-
-      // Paso 2 — buySkin
-      setStatus("confirming");
-      const hash = await walletClient.writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: ABI,
-        functionName: "buySkin",
-        args: [skinId],
-        account: address,
-        chain: walletClient.chain,
-      });
-      await publicClient.waitForTransactionReceipt({ hash });
-
-      setTxHash(hash);
-      setStatus("success");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error en la transacción");
-      setStatus("error");
-    }
-  };
-
-  return { buySkin, status, txHash, error, reset: () => { setStatus("idle"); setError(null); } };
+export function usePaySkin() {
+  const { pay, ...rest } = useContractPay("paySkin");
+  return { paySkin: pay, ...rest };
 }

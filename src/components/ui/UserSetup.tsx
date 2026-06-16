@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { COUNTRIES } from "@/lib/constants";
-import { supabase } from "@/lib/supabase";
+import { supabase, getCountries } from "@/lib/supabase";
+import type { CountryRow } from "@/lib/supabase";
 
 interface Props {
   onDone: (username: string, countryCode: string) => void;
@@ -12,15 +12,17 @@ const RESERVED = ["admin", "agroverse", "test", "root"];
 export default function UserSetup({ onDone }: Props) {
   const [username, setUsername]       = useState("");
   const [countryCode, setCountryCode] = useState("");
+  const [countries, setCountries]     = useState<CountryRow[]>([]);
   const [error, setError]             = useState("");
   const [checking, setChecking]       = useState(false);
   const [available, setAvailable]     = useState<boolean | null>(null);
   const [submitting, setSubmitting]   = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const selectedCountry = COUNTRIES.find((c) => c.code === countryCode);
+  useEffect(() => { getCountries().then(setCountries); }, []);
 
-  // Verificar disponibilidad en Supabase con debounce
+  const selectedCountry = countries.find((c) => c.code === countryCode);
+
   useEffect(() => {
     const u = username.trim();
     setAvailable(null);
@@ -70,7 +72,6 @@ export default function UserSetup({ onDone }: Props) {
 
       <div className="w-full max-w-xs flex flex-col gap-4">
 
-        {/* Username */}
         <div>
           <label className="text-green-800 text-sm font-semibold mb-1.5 block">
             👤 Nombre de agricultor
@@ -95,33 +96,44 @@ export default function UserSetup({ onDone }: Props) {
           <p className="text-gray-400 text-xs mt-1 ml-1">{username.trim().length}/20 · Solo letras, números y _</p>
         </div>
 
-        {/* País */}
         <div>
           <label className="text-green-800 text-sm font-semibold mb-1.5 block">
             🌍 Tu país
           </label>
-          <div className="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
-            {COUNTRIES.map((c) => (
-              <button
-                key={c.code}
-                onClick={() => { setCountryCode(c.code); setError(""); }}
-                className={`flex flex-col items-center py-2 px-1 rounded-xl border-2 text-center transition active:scale-95 ${
-                  countryCode === c.code
-                    ? "border-green-500 bg-green-50"
-                    : "border-gray-200 bg-white hover:border-green-300"
-                }`}
-              >
-                <span className="text-2xl">{c.flag}</span>
-                <span className="text-xs text-gray-600 mt-0.5 leading-tight">{c.name}</span>
-              </button>
-            ))}
-          </div>
+          {countries.length === 0 ? (
+            <div className="flex items-center justify-center py-6 gap-2">
+              <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+              <p className="text-green-600 text-sm">Cargando países...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
+              {countries.map((c) => (
+                <button
+                  key={c.code}
+                  onClick={() => { setCountryCode(c.code); setError(""); }}
+                  className={`flex flex-col items-center py-2 px-1 rounded-xl border-2 text-center transition active:scale-95 ${
+                    countryCode === c.code
+                      ? "border-green-500 bg-green-50"
+                      : "border-gray-200 bg-white hover:border-green-300"
+                  }`}
+                >
+                  {c.code === "OTHER"
+                    ? <span className="text-2xl">🌍</span>
+                    : <img src={c.flag_url} alt={c.name} className="w-8 h-5 object-cover rounded-sm" />
+                  }
+                  <span className="text-xs text-gray-600 mt-0.5 leading-tight">{c.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Preview */}
         {username.trim().length >= 3 && selectedCountry && (
           <div className="bg-green-50 border-2 border-green-200 rounded-xl p-3 flex items-center gap-3">
-            <span className="text-3xl">{selectedCountry.flag}</span>
+            {selectedCountry.code === "OTHER"
+              ? <span className="text-3xl">🌍</span>
+              : <img src={selectedCountry.flag_url} alt={selectedCountry.name} className="w-10 h-7 object-cover rounded" />
+            }
             <div>
               <p className="text-green-800 font-bold">{username.trim()}</p>
               <p className="text-green-600 text-xs">{selectedCountry.name} · Nivel 1</p>
