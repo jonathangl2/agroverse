@@ -31,7 +31,7 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance }: Props) 
       <div className="space-y-3">
         {SKINS.map((skin) => {
           const isActive = skin.id === currentSkin;
-          const canAfford = balance >= skin.priceUSDC;
+          const canAfford = balance >= skin.priceUSDT;
           const style = RARITY_STYLE[skin.rarity];
           return (
             <div key={skin.id} className={`bg-white border-2 ${style.card} rounded-2xl p-4 shadow-sm`}>
@@ -48,7 +48,7 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance }: Props) 
                   </div>
                   <p className="text-gray-500 text-xs">{skin.description}</p>
                   <p className="text-green-700 font-bold mt-1">
-                    {skin.priceUSDC === 0 ? "Gratis" : `${skin.priceUSDC} USDC`}
+                    {skin.priceUSDT === 0 ? "Gratis" : `${skin.priceUSDT} USDC`}
                   </p>
                 </div>
                 <div>
@@ -59,14 +59,14 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance }: Props) 
                   ) : (
                     <button
                       onClick={() => onBuy(skin.id)}
-                      disabled={!canAfford && skin.priceUSDC > 0}
+                      disabled={!canAfford && skin.priceUSDT > 0}
                       className={`text-xs px-3 py-2 rounded-xl font-semibold transition active:scale-95 ${
-                        canAfford || skin.priceUSDC === 0
+                        canAfford || skin.priceUSDT === 0
                           ? "bg-amber-500 hover:bg-amber-400 text-white"
                           : "bg-gray-100 text-gray-400 cursor-not-allowed"
                       }`}
                     >
-                      {skin.priceUSDC === 0 ? "Equipar" : canAfford ? "Comprar" : "Sin saldo"}
+                      {skin.priceUSDT === 0 ? "Equipar" : canAfford ? "Comprar" : "Sin saldo"}
                     </button>
                   )}
                 </div>
