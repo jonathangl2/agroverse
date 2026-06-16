@@ -35,7 +35,7 @@ function useContractPay(functionName: "paySeed" | "paySkin") {
   const [txHash, setTxHash]   = useState<string | null>(null);
   const [error, setError]     = useState<string | null>(null);
 
-  const pay = async (ref: string, priceUsdc: number) => {
+  const pay = async (ref: string, priceUsdc: number): Promise<string> => {
     setStatus("idle");
     setError(null);
     setTxHash(null);
@@ -71,9 +71,11 @@ function useContractPay(functionName: "paySeed" | "paySkin") {
 
       setTxHash(hash);
       setStatus("success");
+      return hash;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error en la transacción");
       setStatus("error");
+      throw err;
     }
   };
 

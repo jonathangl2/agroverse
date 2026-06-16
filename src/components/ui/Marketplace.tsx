@@ -28,7 +28,7 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance, walletAdd
   const [skins, setSkins]     = useState<SkinRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [buyingId, setBuyingId] = useState<SkinId | null>(null);
-  const { paySkin, status: txStatus, error: txError, txHash, reset: resetTx } = usePaySkin();
+  const { paySkin, status: txStatus, error: txError, reset: resetTx } = usePaySkin();
 
   useEffect(() => {
     getSkins().then((data) => { setSkins(data); setLoading(false); });
@@ -38,11 +38,11 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance, walletAdd
     if (skin.price === 0) { onBuy(skin.id); return; }
     setBuyingId(skin.id);
     try {
-      await paySkin(skin.id, skin.price);
+      const hash = await paySkin(skin.id, skin.price);
       onBuy(skin.id);
       onPurchaseComplete?.();
       if (walletAddress) {
-        recordSkinPurchase(walletAddress, skin.id, txHash ?? "", skin.price, skin.price_token).catch(console.warn);
+        recordSkinPurchase(walletAddress, skin.id, hash, skin.price, skin.price_token).catch(console.warn);
       }
     } catch {
       // error manejado en el hook

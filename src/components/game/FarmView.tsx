@@ -61,7 +61,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
   const plotsRef  = useRef(plots);
   const cropsRef  = useRef<Record<string, CropRow>>({});
   const { paySeed, status: txStatus, txHash, error: txError, reset: resetTx } = usePaySeed();
-  const pendingPlant = useRef<{ plotId: number; cropId: CropId } | null>(null);
+  const pendingPlant = useRef<{ plotId: number; cropId: CropId; hash?: string } | null>(null);
 
   // Cargar catálogo de cultivos desde Supabase
   useEffect(() => {
@@ -90,12 +90,12 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
 
   // Cuando tx confirma → plantar localmente y registrar en Supabase
   useEffect(() => {
-    if (txStatus === "success" && pendingPlant.current && txHash) {
-      const { plotId, cropId } = pendingPlant.current;
+    if (txStatus === "success" && pendingPlant.current) {
+      const { plotId, cropId, hash } = pendingPlant.current;
       const crop = cropsRef.current[cropId];
       _plantLocal(plotId, cropId, true);
-      if (walletAddress && crop) {
-        recordPurchase(walletAddress, cropId, txHash, crop.seed_cost, crop.seed_cost_token).catch(console.warn);
+      if (walletAddress && crop && hash) {
+        recordPurchase(walletAddress, cropId, hash, crop.seed_cost, crop.seed_cost_token).catch(console.warn);
       }
       pendingPlant.current = null;
       onPurchaseComplete?.();
@@ -137,7 +137,8 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
     }
     pendingPlant.current = { plotId, cropId };
     setSelected(null);
-    await paySeed(cropId, crop.seed_cost);
+    const hash = await paySeed(cropId, crop.seed_cost);
+    if (pendingPlant.current) pendingPlant.current.hash = hash;
   };
 
   const harvest = (plotId: number) => {
