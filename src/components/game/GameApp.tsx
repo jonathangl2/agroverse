@@ -16,11 +16,12 @@ type Tab = "farm" | "profile" | "ranking" | "shop";
 export default function GameApp() {
   const walletReal = useWallet();
 
-  // Fix 1: onboarded persiste en localStorage
-  const [onboarded, setOnboarded] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("ag_onboarded") === "1";
-  });
+  const [onboarded, setOnboarded] = useState(false);
+
+  // Fix 1: leer localStorage solo en cliente para evitar hydration mismatch
+  useEffect(() => {
+    if (localStorage.getItem("ag_onboarded") === "1") setOnboarded(true);
+  }, []);
 
   const [username, setUsername]       = useState<string | null>(null);
   const [countryCode, setCountryCode] = useState<string>("CO");
