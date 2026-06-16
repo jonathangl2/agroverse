@@ -18,13 +18,26 @@ interface Props {
   onPointsEarned: (pts: number) => void;
   demoMode: boolean;
   walletAddress?: string | null;
+  onPurchaseComplete?: () => void;
 }
 
+const PLOTS_KEY = "ag_plots";
+
 function initPlots(): Plot[] {
+  if (typeof window !== "undefined") {
+    try {
+      const saved = localStorage.getItem(PLOTS_KEY);
+      if (saved) return JSON.parse(saved) as Plot[];
+    } catch { /* ignore */ }
+  }
   return Array.from({ length: GAME_CONFIG.PLOTS_PER_PLAYER }, (_, i) => ({
     id: i,
     state: "empty" as const,
   }));
+}
+
+function savePlots(plots: Plot[]) {
+  try { localStorage.setItem(PLOTS_KEY, JSON.stringify(plots)); } catch { /* ignore */ }
 }
 
 function pct(plot: Plot) {
@@ -42,7 +55,7 @@ function timeLeft(readyAt: number) {
 
 const ALL_CROPS = Object.values(CROPS);
 
-export default function FarmView({ onPointsEarned, demoMode, walletAddress }: Props) {
+export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPurchaseComplete }: Props) {
   const [plots, setPlots]       = useState<Plot[]>(initPlots());
   const [selected, setSelected] = useState<number | null>(null);
   const [premiumToast, setPremiumToast] = useState(false);
@@ -76,6 +89,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress }: Pr
         recordPurchase(walletAddress, cropId, txHash, CROPS[cropId].seedCostUSDT).catch(console.warn);
       }
       pendingPlant.current = null;
+      onPurchaseComplete?.();
       setPremiumToast(true);
       setTimeout(() => { setPremiumToast(false); resetTx(); }, 5000);
     }
@@ -94,6 +108,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress }: Pr
     );
     plotsRef.current = updated;
     setPlots([...updated]);
+    savePlots(updated);
     setSelected(null);
   };
 
@@ -124,6 +139,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress }: Pr
     );
     plotsRef.current = updated;
     setPlots([...updated]);
+    savePlots(updated);
   };
 
   return (
