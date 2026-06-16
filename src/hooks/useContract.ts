@@ -114,3 +114,55 @@ export function useBuySeed() {
 
   return { buySeed, status, txHash, error, reset: () => setStatus("idle") };
 }
+
+// ── Comprar skin ───────────────────────────────────────────────────────────
+export function useBuySkin() {
+  const [status, setStatus] = useState<TxStatus>("idle");
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [error, setError]   = useState<string | null>(null);
+
+  const buySkin = async (skinId: string, priceUSDC: number) => {
+    setStatus("idle");
+    setError(null);
+    setTxHash(null);
+
+    try {
+      const walletClient = getWalletClient();
+      const [address] = await walletClient.getAddresses();
+
+      const amount = parseUnits(priceUSDC.toString(), 6);
+
+      // Paso 1 — Approve
+      setStatus("approving");
+      const approveTx = await walletClient.writeContract({
+        address: USDC_ADDRESS,
+        abi: ERC20_ABI,
+        functionName: "approve",
+        args: [CONTRACT_ADDRESS, amount],
+        account: address,
+        chain: walletClient.chain,
+      });
+      await publicClient.waitForTransactionReceipt({ hash: approveTx });
+
+      // Paso 2 — buySkin
+      setStatus("confirming");
+      const hash = await walletClient.writeContract({
+        address: CONTRACT_ADDRESS,
+        abi: ABI,
+        functionName: "buySkin",
+        args: [skinId],
+        account: address,
+        chain: walletClient.chain,
+      });
+      await publicClient.waitForTransactionReceipt({ hash });
+
+      setTxHash(hash);
+      setStatus("success");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error en la transacción");
+      setStatus("error");
+    }
+  };
+
+  return { buySkin, status, txHash, error, reset: () => { setStatus("idle"); setError(null); } };
+}

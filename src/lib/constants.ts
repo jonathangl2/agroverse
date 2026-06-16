@@ -107,31 +107,31 @@ export const CROPS: Record<string, Crop> = {
 export const SKINS: Skin[] = [
   {
     id: "default",
-    name: "Farmer Base",
+    name: "Classic Farmer",
     priceUSDT: 0,
     rarity: "common",
-    description: "El agricultor de siempre. Fiel a sus raíces.",
+    description: "The timeless farmer. Ready to cultivate anywhere in the world.",
   },
   {
     id: "ruana_roja",
-    name: "Ruana Roja",
+    name: "Andean Warrior",
     priceUSDT: 0.5,
     rarity: "rare",
-    description: "Ruana tejida a mano en los Andes. Clásica y elegante.",
+    description: "Inspired by highland farmers. Warmth and tradition from the mountains.",
   },
   {
     id: "sombrero_aguadeno",
-    name: "Sombrero Aguadeño",
+    name: "Sun Guardian",
     priceUSDT: 1.0,
     rarity: "rare",
-    description: "El sombrero más famoso de Colombia. Símbolo de orgullo.",
+    description: "A legendary hat worn by the world's greatest harvesters.",
   },
   {
     id: "overol_verde",
-    name: "Overol Verde",
+    name: "Elite Grower",
     priceUSDT: 2.0,
     rarity: "epic",
-    description: "Edición limitada. Solo los mejores agricultores lo portan.",
+    description: "Limited edition. Only the top farmers on the global leaderboard earn this.",
   },
 ];
 

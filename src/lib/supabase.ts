@@ -54,6 +54,29 @@ export async function getTopPlayers(limit = 20): Promise<PlayerRow[]> {
 
 // ── Purchase helpers ───────────────────────────────────────────────────────────
 
+export async function recordSkinPurchase(
+  wallet: string,
+  skinId: string,
+  txHash: string,
+  amountUsdc: number
+) {
+  const { error } = await supabase.from("player_skins").insert({
+    wallet_address: wallet,
+    skin_id: skinId,
+    tx_hash: txHash,
+    amount_usdc: amountUsdc,
+  });
+  if (error && !error.message.includes("duplicate")) throw error;
+}
+
+export async function getPlayerSkins(wallet: string): Promise<string[]> {
+  const { data } = await supabase
+    .from("player_skins")
+    .select("skin_id")
+    .eq("wallet_address", wallet);
+  return (data ?? []).map((r: { skin_id: string }) => r.skin_id);
+}
+
 export async function recordPurchase(
   wallet: string,
   seedId: string,

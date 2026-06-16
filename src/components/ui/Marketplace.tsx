@@ -1,8 +1,17 @@
 "use client";
+import { useState } from "react";
 import { SKINS } from "@/lib/constants";
 import type { SkinId } from "@/types";
+import { useBuySkin } from "@/hooks/useContract";
+import { recordSkinPurchase } from "@/lib/supabase";
 
-interface Props { currentSkin: SkinId; onBuy: (skinId: SkinId) => void; usdcBalance: string; }
+interface Props {
+  currentSkin: SkinId;
+  onBuy: (skinId: SkinId) => void;
+  usdcBalance: string;
+  walletAddress?: string | null;
+  onPurchaseComplete?: () => void;
+}
 
 const RARITY_STYLE = {
   common: { badge: "bg-gray-100 text-gray-500 border-gray-300",   card: "border-gray-200" },
@@ -14,13 +23,56 @@ const SKIN_AVATAR: Record<SkinId, string> = {
   default: "👨‍🌾", ruana_roja: "🧣", sombrero_aguadeno: "👒", overol_verde: "🥋",
 };
 
-export default function Marketplace({ currentSkin, onBuy, usdcBalance }: Props) {
+export default function Marketplace({ currentSkin, onBuy, usdcBalance, walletAddress, onPurchaseComplete }: Props) {
   const balance = parseFloat(usdcBalance);
+  const { buySkin, status: txStatus, error: txError, txHash, reset: resetTx } = useBuySkin();
+  const [buyingId, setBuyingId] = useState<SkinId | null>(null);
+
+  const handleBuy = async (skinId: SkinId, price: number) => {
+    if (price === 0) { onBuy(skinId); return; }
+    setBuyingId(skinId);
+    try {
+      await buySkin(skinId, price);
+      onBuy(skinId);
+      onPurchaseComplete?.();
+      // Registrar en Supabase (best-effort, no bloquea UX)
+      if (walletAddress) {
+        recordSkinPurchase(walletAddress, skinId, txHash ?? "", price).catch(console.warn);
+      }
+    } catch {
+      // error ya manejado en el hook
+    } finally {
+      setBuyingId(null);
+      resetTx();
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
+
+      {/* Overlay tx en curso */}
+      {(txStatus === "approving" || txStatus === "confirming") && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-6 mx-6 flex flex-col items-center gap-3 shadow-2xl">
+            <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-purple-800 font-bold text-base text-center">
+              {txStatus === "approving" ? "Aprobando USDC..." : "Comprando skin..."}
+            </p>
+            <p className="text-gray-400 text-xs text-center">No cierres la app</p>
+          </div>
+        </div>
+      )}
+
+      {txStatus === "error" && txError && (
+        <div className="bg-red-50 border-2 border-red-300 rounded-2xl px-4 py-3 text-center">
+          <p className="text-red-600 text-sm font-bold">❌ {txError}</p>
+          <button onClick={resetTx} className="text-blue-500 text-xs mt-1 underline">Cerrar</button>
+        </div>
+      )}
+
       <div className="text-center">
         <h2 className="text-xl font-bold text-green-800">🛍️ Tienda de Skins</h2>
-        <p className="text-green-600 text-xs mt-1">Arte de ilustradores colombianos</p>
+        <p className="text-green-600 text-xs mt-1">Personaliza tu agricultor · Ediciones globales</p>
       </div>
 
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between">
@@ -32,6 +84,7 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance }: Props) 
         {SKINS.map((skin) => {
           const isActive = skin.id === currentSkin;
           const canAfford = balance >= skin.priceUSDT;
+          const isBuying = buyingId === skin.id;
           const style = RARITY_STYLE[skin.rarity];
           return (
             <div key={skin.id} className={`bg-white border-2 ${style.card} rounded-2xl p-4 shadow-sm`}>
@@ -58,15 +111,15 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance }: Props) 
                     </span>
                   ) : (
                     <button
-                      onClick={() => onBuy(skin.id)}
-                      disabled={!canAfford && skin.priceUSDT > 0}
+                      onClick={() => handleBuy(skin.id as SkinId, skin.priceUSDT)}
+                      disabled={(!canAfford && skin.priceUSDT > 0) || isBuying}
                       className={`text-xs px-3 py-2 rounded-xl font-semibold transition active:scale-95 ${
                         canAfford || skin.priceUSDT === 0
                           ? "bg-amber-500 hover:bg-amber-400 text-white"
                           : "bg-gray-100 text-gray-400 cursor-not-allowed"
                       }`}
                     >
-                      {skin.priceUSDT === 0 ? "Equipar" : canAfford ? "Comprar" : "Sin saldo"}
+                      {isBuying ? "..." : skin.priceUSDT === 0 ? "Equipar" : canAfford ? "Comprar" : "Sin saldo"}
                     </button>
                   )}
                 </div>
@@ -74,13 +127,6 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance }: Props) 
             </div>
           );
         })}
-      </div>
-
-      <div className="bg-purple-50 border-2 border-purple-200 rounded-2xl p-4 text-center">
-        <p className="text-purple-700 text-sm font-semibold">🎨 ¿Eres ilustrador?</p>
-        <p className="text-purple-500 text-xs mt-1">
-          Próximamente podrás vender tus skins y ganar USDC por cada venta
-        </p>
       </div>
     </div>
   );
