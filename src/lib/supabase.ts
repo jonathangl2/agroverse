@@ -125,7 +125,7 @@ export async function recordPurchase(
   amount: number,
   amountToken: string = "USDC"
 ) {
-  const { error } = await supabase.from("purchases").insert({
+  const { error } = await supabase.from("seed_purchases").insert({
     wallet_address: wallet,
     seed_id: seedId,
     tx_hash: txHash,
@@ -144,14 +144,22 @@ export async function recordSkinPurchase(
   amount: number,
   amountToken: string = "USDC"
 ) {
-  const { error } = await supabase.from("player_skins").insert({
+  // Historial de pagos
+  const { error: e1 } = await supabase.from("skin_purchases").insert({
     wallet_address: wallet,
     skin_id: skinId,
     tx_hash: txHash,
     amount,
     amount_token: amountToken,
   });
-  if (error && !error.message.includes("duplicate")) throw error;
+  if (e1 && !e1.message.includes("duplicate")) throw e1;
+
+  // Desbloquear skin para el jugador
+  const { error: e2 } = await supabase.from("player_skins").insert({
+    wallet_address: wallet,
+    skin_id: skinId,
+  });
+  if (e2 && !e2.message.includes("duplicate")) throw e2;
 }
 
 export async function getPlayerSkins(wallet: string): Promise<string[]> {
