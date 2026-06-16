@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import type { SkinId } from "@/types";
 import type { SkinRow } from "@/lib/supabase";
-import { getSkins, recordSkinPurchase } from "@/lib/supabase";
+import { getSkins, getPlayerSkins, recordSkinPurchase } from "@/lib/supabase";
 import { usePaySkin } from "@/hooks/useContract";
 
 interface Props {
@@ -25,8 +25,9 @@ const RARITY_LABEL: Record<string, string> = {
 
 export default function Marketplace({ currentSkin, onBuy, usdcBalance, walletAddress, onPurchaseComplete }: Props) {
   const balance = parseFloat(usdcBalance);
-  const [skins, setSkins]     = useState<SkinRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [skins, setSkins]       = useState<SkinRow[]>([]);
+  const [ownedIds, setOwnedIds] = useState<string[]>(["default"]);
+  const [loading, setLoading]   = useState(true);
   const [buyingId, setBuyingId] = useState<SkinId | null>(null);
   const { paySkin, status: txStatus, error: txError, reset: resetTx } = usePaySkin();
 
@@ -34,11 +35,19 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance, walletAdd
     getSkins().then((data) => { setSkins(data); setLoading(false); });
   }, []);
 
+  useEffect(() => {
+    if (walletAddress) {
+      getPlayerSkins(walletAddress).then((ids) => setOwnedIds(["default", ...ids]));
+    }
+  }, [walletAddress]);
+
   const handleBuy = async (skin: SkinRow) => {
-    if (skin.price === 0) { onBuy(skin.id); return; }
+    // Si ya la tiene, solo equipar
+    if (skin.price === 0 || ownedIds.includes(skin.id)) { onBuy(skin.id); return; }
     setBuyingId(skin.id);
     try {
       const hash = await paySkin(skin.id, skin.price);
+      setOwnedIds((prev) => [...prev, skin.id]);
       onBuy(skin.id);
       onPurchaseComplete?.();
       if (walletAddress) {
@@ -94,6 +103,7 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance, walletAdd
       <div className="space-y-3">
         {skins.map((skin) => {
           const isActive  = skin.id === currentSkin;
+          const isOwned   = ownedIds.includes(skin.id);
           const canAfford = balance >= skin.price;
           const isBuying  = buyingId === skin.id;
           const style     = RARITY_STYLE[skin.rarity] ?? RARITY_STYLE.common;
@@ -125,14 +135,14 @@ export default function Marketplace({ currentSkin, onBuy, usdcBalance, walletAdd
                   ) : (
                     <button
                       onClick={() => handleBuy(skin)}
-                      disabled={(!canAfford && skin.price > 0) || isBuying}
+                      disabled={(!canAfford && skin.price > 0 && !isOwned) || isBuying}
                       className={`text-xs px-3 py-2 rounded-xl font-semibold transition active:scale-95 ${
-                        canAfford || skin.price === 0
+                        isOwned || canAfford || skin.price === 0
                           ? "bg-amber-500 hover:bg-amber-400 text-white"
                           : "bg-gray-100 text-gray-400 cursor-not-allowed"
                       }`}
                     >
-                      {isBuying ? "..." : skin.price === 0 ? "Equipar" : canAfford ? "Comprar" : "Sin saldo"}
+                      {isBuying ? "..." : isOwned || skin.price === 0 ? "Equipar" : canAfford ? "Comprar" : "Sin saldo"}
                     </button>
                   )}
                 </div>

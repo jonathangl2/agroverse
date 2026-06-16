@@ -17,9 +17,10 @@ interface Props {
   skin: SkinId;
   usdcBalance: string;
   onChangeSkin: () => void;
+  onEquipSkin: (skinId: string) => void;
 }
 
-export default function Profile({ address, username, countryCode, points, level, skin, usdcBalance, onChangeSkin }: Props) {
+export default function Profile({ address, username, countryCode, points, level, skin, usdcBalance, onChangeSkin, onEquipSkin }: Props) {
   const [allSkins, setAllSkins]       = useState<SkinRow[]>([]);
   const [ownedIds, setOwnedIds]       = useState<string[]>(["default"]);
   const flagSrc = flagUrl(countryCode);
@@ -98,14 +99,18 @@ export default function Profile({ address, username, countryCode, points, level,
         <p className="text-green-800 text-sm font-bold mb-3">🎨 Mis skins</p>
         <div className="flex gap-2 flex-wrap">
           {ownedSkins.map((s) => (
-            <div key={s.id}
-              className={`flex flex-col items-center p-2 rounded-xl border-2 min-w-[64px] ${
-                s.id === skin ? "border-amber-400 bg-amber-50" : "border-gray-200 bg-gray-50"
+            <button key={s.id}
+              onClick={() => s.id !== skin && onEquipSkin(s.id)}
+              className={`flex flex-col items-center p-2 rounded-xl border-2 min-w-[64px] transition active:scale-95 ${
+                s.id === skin ? "border-amber-400 bg-amber-50" : "border-gray-200 bg-gray-50 hover:border-green-300"
               }`}>
               <span className="text-3xl">{s.emoji}</span>
               <span className="text-gray-700 text-xs mt-1 text-center leading-tight">{s.name}</span>
-              {s.id === skin && <span className="text-amber-500 text-xs font-bold mt-0.5">✓ activa</span>}
-            </div>
+              {s.id === skin
+                ? <span className="text-amber-500 text-xs font-bold mt-0.5">✓ activa</span>
+                : <span className="text-green-500 text-xs mt-0.5">Equipar</span>
+              }
+            </button>
           ))}
           <div className="flex flex-col items-center p-2 rounded-xl border-2 border-dashed border-gray-200 opacity-50 min-w-[64px]">
             <span className="text-3xl">🔒</span>

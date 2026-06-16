@@ -256,6 +256,7 @@ export default function GameApp() {
             skin={skin}
             usdcBalance={walletReal.usdcBalance}
             onChangeSkin={() => switchTab("shop")}
+            onEquipSkin={(skinId) => { setSkin(skinId); showToast("🎨 ¡Skin equipada!", "skin"); }}
           />
         )}
         {tab === "ranking" && (
