@@ -104,8 +104,14 @@ export default function Ranking({ currentAddress, currentPoints, username, count
   }, []);
 
   const myPosition = players.findIndex((p) => p.wallet_address === currentAddress) + 1;
-  const topPoints = players[0]?.points ?? 1;
   const liq = getLiquidationInTz(countryCode);
+
+  // Progreso de nivel (igual que en Profile)
+  const myPlayer = players.find((p) => p.wallet_address === currentAddress);
+  const myLevel  = myPlayer?.level ?? Math.floor((currentPoints ?? 0) / 500) + 1;
+  const levelBase = (myLevel - 1) * 500;
+  const levelNext = myLevel * 500;
+  const levelProgress = Math.min(100, Math.max(0, (((currentPoints ?? 0) - levelBase) / (levelNext - levelBase)) * 100));
   const pool = prizePool ? parseFloat(prizePool) : null;
 
   return (
@@ -149,8 +155,9 @@ export default function Ranking({ currentAddress, currentPoints, username, count
           </div>
           <div className="mt-2 bg-green-200 rounded-full h-2">
             <div className="bg-green-500 h-2 rounded-full transition-all"
-              style={{ width: `${Math.min(100, ((currentPoints ?? 0) / topPoints) * 100)}%` }} />
+              style={{ width: `${levelProgress}%` }} />
           </div>
+          <p className="text-green-500 text-xs mt-1">Nivel {myLevel} · faltan {Math.max(0, levelNext - (currentPoints ?? 0))} pts para Nv. {myLevel + 1}</p>
         </div>
       )}
 
