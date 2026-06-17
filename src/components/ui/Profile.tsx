@@ -46,7 +46,7 @@ export default function Profile({ address, username, countryCode, points, level,
           <div className="flex items-center gap-1.5 flex-wrap">
             <p className="text-white font-bold text-base leading-tight flex items-center gap-1">
               {username}
-              <span className="text-white/50 text-[10px] font-mono">({address.slice(0, 6)}...{address.slice(-4)})</span>
+              <span className="text-white/50 text-[10px] font-mono">({address.slice(0, 6)}···{address.slice(-4)})</span>
             </p>
           </div>
           <p className="text-white/75 text-xs mt-0.5">{activeSkin?.name ?? "Classic Farmer"}</p>
@@ -61,7 +61,7 @@ export default function Profile({ address, username, countryCode, points, level,
         </div>
         <button
           onClick={onChangeSkin}
-          className="shrink-0 self-center bg-white/20 hover:bg-white/35 text-white text-xs px-3.5 py-2 rounded-xl border border-white/30 transition active:scale-95 whitespace-nowrap"
+          className="shrink-0 self-end mt-2 bg-white/20 hover:bg-white/35 text-white text-xs px-3.5 py-2 rounded-xl border border-white/30 transition active:scale-95 whitespace-nowrap"
         >
           🎨 Cambiar skin
         </button>
