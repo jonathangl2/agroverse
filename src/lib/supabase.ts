@@ -77,7 +77,7 @@ export async function getCountries(): Promise<CountryRow[]> {
     .from("countries")
     .select("*")
     .eq("active", true)
-    .order("sort_order");
+    .order("name");
   return data ?? [];
 }
 

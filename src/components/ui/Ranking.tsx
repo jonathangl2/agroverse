@@ -16,23 +16,70 @@ const DISTRIBUTION = [
   { pos: 3, label: "3er lugar", pct: 20, medal: "🥉" },
 ];
 
-// Próxima liquidación: último día del mes a las 23:59 UTC
-function getNextLiquidation() {
+// Zona horaria por código de país
+const COUNTRY_TZ: Record<string, string> = {
+  CO: "America/Bogota",
+  MX: "America/Mexico_City",
+  AR: "America/Argentina/Buenos_Aires",
+  CL: "America/Santiago",
+  PE: "America/Lima",
+  EC: "America/Guayaquil",
+  BO: "America/La_Paz",
+  VE: "America/Caracas",
+  PY: "America/Asuncion",
+  UY: "America/Montevideo",
+  BR: "America/Sao_Paulo",
+  PA: "America/Panama",
+  CR: "America/Costa_Rica",
+  GT: "America/Guatemala",
+  HN: "America/Tegucigalpa",
+  SV: "America/El_Salvador",
+  NI: "America/Managua",
+  DO: "America/Santo_Domingo",
+  CU: "America/Havana",
+  US: "America/New_York",
+  CA: "America/Toronto",
+  ES: "Europe/Madrid",
+  PT: "Europe/Lisbon",
+  FR: "Europe/Paris",
+  DE: "Europe/Berlin",
+  IT: "Europe/Rome",
+  GB: "Europe/London",
+  NG: "Africa/Lagos",
+  GH: "Africa/Accra",
+  KE: "Africa/Nairobi",
+  IN: "Asia/Kolkata",
+  PH: "Asia/Manila",
+  ID: "Asia/Jakarta",
+  JP: "Asia/Tokyo",
+  OTHER: "America/Bogota",
+};
+
+// Liquidación: último día del mes a las 23:59 hora Colombia (UTC-5)
+function getLiquidationInTz(countryCode: string) {
+  const tz = COUNTRY_TZ[countryCode] ?? "America/Bogota";
   const now = new Date();
-  const lastDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 0));
-  return lastDay;
-}
+  // Último día del mes actual
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const dateStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, "0")}-${String(lastDay.getDate()).padStart(2, "0")}T23:59:00`;
 
-function formatUTC(date: Date) {
-  return date.toUTCString().replace("GMT", "UTC");
-}
+  // Hora en Colombia
+  const coTime = new Intl.DateTimeFormat("es-CO", {
+    timeZone: "America/Bogota",
+    day: "2-digit", month: "long", year: "numeric",
+  }).format(lastDay);
 
-function formatLocal(date: Date) {
-  return date.toLocaleString(undefined, {
-    day: "2-digit", month: "short", year: "numeric",
+  // Hora en la zona del usuario
+  const userTime = new Intl.DateTimeFormat("es", {
+    timeZone: tz,
+    day: "2-digit", month: "long", year: "numeric",
     hour: "2-digit", minute: "2-digit",
-    timeZoneName: "short",
-  });
+    hour12: true,
+  }).format(new Date(`${dateStr}-05:00`)); // Colombia = UTC-5
+
+  const isSameTz = tz === "America/Bogota";
+
+  return { coTime, userTime, isSameTz, lastDay };
 }
 
 interface Props {
@@ -40,9 +87,10 @@ interface Props {
   currentPoints?: number;
   username?: string;
   countryFlagUrl?: string | null;
+  countryCode?: string;
 }
 
-export default function Ranking({ currentAddress, currentPoints, username, countryFlagUrl }: Props) {
+export default function Ranking({ currentAddress, currentPoints, username, countryFlagUrl, countryCode = "CO" }: Props) {
   const prizePool = usePrizePool();
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +105,7 @@ export default function Ranking({ currentAddress, currentPoints, username, count
 
   const myPosition = players.findIndex((p) => p.wallet_address === currentAddress) + 1;
   const topPoints = players[0]?.points ?? 1;
-  const liquidation = getNextLiquidation();
+  const liq = getLiquidationInTz(countryCode);
   const pool = prizePool ? parseFloat(prizePool) : null;
 
   return (
@@ -192,12 +240,17 @@ export default function Ranking({ currentAddress, currentPoints, username, count
             {/* Próxima liquidación */}
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
               <p className="text-amber-800 font-semibold text-sm mb-2">⏰ Próxima liquidación</p>
-              <p className="text-amber-700 text-xs font-mono">{formatUTC(liquidation)}</p>
-              <p className="text-amber-500 text-xs mt-1">
-                En tu zona horaria: <span className="font-semibold">{formatLocal(liquidation)}</span>
+              <p className="text-amber-700 text-sm font-semibold">
+                {liq.coTime} · 11:59 PM
               </p>
-              <p className="text-gray-400 text-xs mt-2 leading-relaxed">
-                El pago se realiza automáticamente al cierre del mes. Si estás en una zona UTC+ puede ser que el pago aparezca el primer día del siguiente mes.
+              <p className="text-amber-600 text-xs mt-0.5">Hora oficial: Colombia (UTC-5)</p>
+              {!liq.isSameTz && (
+                <p className="text-amber-500 text-xs mt-2">
+                  En tu país esto equivale a: <span className="font-semibold">{liq.userTime}</span>
+                </p>
+              )}
+              <p className="text-gray-400 text-xs mt-3 leading-relaxed">
+                El premio se reparte automáticamente al finalizar el mes. Asegúrate de estar en el Top 3 antes de esa fecha.
               </p>
             </div>
 

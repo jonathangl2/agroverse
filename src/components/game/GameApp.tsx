@@ -291,6 +291,7 @@ export default function GameApp() {
             currentPoints={points}
             username={username}
             countryFlagUrl={countryFlagUrl}
+            countryCode={countryCode}
           />
         )}
         {tab === "shop" && <Marketplace currentSkin={skin} onBuy={handleBuySkin} usdcBalance={walletReal.usdcBalance} walletAddress={walletReal.address} onPurchaseComplete={handlePurchaseComplete} />}

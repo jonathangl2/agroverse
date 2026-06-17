@@ -20,9 +20,16 @@ function getAudio(name: SoundName): HTMLAudioElement | null {
     audio.preload = "auto";
     audio.volume = VOLUMES[name];
     if (name === "ambient") audio.loop = true;
+    // Warm-up: decodifica el audio sin reproducirlo para eliminar el delay inicial
+    audio.load();
     cache[name] = audio;
   }
   return cache[name]!;
+}
+
+// Precarga todos los sonidos en cuanto el módulo se importa (client-side)
+if (typeof window !== "undefined") {
+  (["coins", "harvest", "levelup", "seed", "ambient"] as SoundName[]).forEach(getAudio);
 }
 
 export function useSound() {
