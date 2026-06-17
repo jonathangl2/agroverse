@@ -157,7 +157,7 @@ export default function Ranking({ currentAddress, currentPoints, username, count
             <div className="bg-green-500 h-2 rounded-full transition-all"
               style={{ width: `${levelProgress}%` }} />
           </div>
-          <p className="text-green-500 text-xs mt-1">Nivel {myLevel} · faltan {Math.max(0, levelNext - (currentPoints ?? 0))} pts para Nv. {myLevel + 1}</p>
+          <p className="text-green-500 text-xs mt-1">Nivel {myLevel} · faltan {Math.max(0, levelNext - (currentPoints ?? 0))} puntos para Nivel {myLevel + 1}</p>
         </div>
       )}
 
