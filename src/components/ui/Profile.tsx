@@ -38,14 +38,16 @@ export default function Profile({ address, username, countryCode, points, level,
   return (
     <div className="flex flex-col gap-4">
 
-      <div className="rounded-2xl px-4 py-3.5 flex items-center gap-4" style={{ background: "linear-gradient(135deg, #15803d 0%, #166534 55%, #d97706 100%)" }}>
+      <div className="rounded-2xl px-4 py-3.5 flex items-center gap-4" style={{ background: "linear-gradient(135deg, #15803d 0%, #b45309 100%)" }}>
         <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-4xl border-[3px] border-white/30 shrink-0">
           {activeSkin?.emoji ?? "👨‍🌾"}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <p className="text-white font-bold text-base leading-tight">{username}</p>
-            <p className="text-white/50 text-[10px] font-mono">({address.slice(0, 6)}...{address.slice(-4)})</p>
+            <p className="text-white font-bold text-base leading-tight flex items-center gap-1">
+              {username}
+              <span className="text-white/50 text-[10px] font-mono">({address.slice(0, 6)}...{address.slice(-4)})</span>
+            </p>
           </div>
           <p className="text-white/75 text-xs mt-0.5">{activeSkin?.name ?? "Classic Farmer"}</p>
           <div className="flex items-center gap-1 mt-1.5">
