@@ -39,7 +39,7 @@ export default function Profile({ address, username, countryCode, points, level,
     <div className="flex flex-col gap-4">
 
       <div className="rounded-2xl px-4 py-3.5 flex items-center gap-4" style={{ background: "linear-gradient(135deg, #15803d 0%, #b45309 100%)" }}>
-        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-4xl border-[3px] border-white/30 shrink-0">
+        <div className="w-16 h-16 bg-white/50 rounded-full flex items-center justify-center text-4xl border-[3px] border-white/60 shrink-0">
           {activeSkin?.emoji ?? "👨‍🌾"}
         </div>
         <div className="flex-1 min-w-0">
