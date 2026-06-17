@@ -6,6 +6,7 @@ import type { Plot, CropId } from "@/types";
 import type { CropRow } from "@/lib/supabase";
 import { usePaySeed } from "@/hooks/useContract";
 import { getCrops, recordPurchase } from "@/lib/supabase";
+import { useSound } from "@/hooks/useSound";
 
 const sheetStyle: React.CSSProperties = {
   animation: "sheet-up 0.28s cubic-bezier(0.32, 0.72, 0, 1) both",
@@ -62,6 +63,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
   const cropsRef  = useRef<Record<string, CropRow>>({});
   const { paySeed, status: txStatus, txHash, error: txError, reset: resetTx } = usePaySeed();
   const pendingPlant = useRef<{ plotId: number; cropId: CropId; hash?: string } | null>(null);
+  const { play } = useSound();
 
   // Cargar catálogo de cultivos desde Supabase
   useEffect(() => {
@@ -93,6 +95,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
     if (txStatus === "success" && pendingPlant.current) {
       const { plotId, cropId, hash } = pendingPlant.current;
       const crop = cropsRef.current[cropId];
+      play("coins");
       _plantLocal(plotId, cropId, true);
       if (walletAddress && crop && hash) {
         recordPurchase(walletAddress, cropId, hash, crop.seed_cost, crop.seed_cost_token).catch(console.warn);
@@ -126,6 +129,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
     const crop = cropsRef.current[cropId];
     if (!crop) return;
     if (!premium) {
+      play("seed");
       _plantLocal(plotId, cropId, false);
       return;
     }
@@ -145,6 +149,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
     const plot = plotsRef.current[plotId];
     if (!plot?.cropId) return;
     const crop = cropsRef.current[plot.cropId];
+    play("harvest");
     if (crop) onPointsEarned(crop.points_reward);
     const updated = plotsRef.current.map((p) =>
       p.id === plotId ? { id: plotId, state: "empty" as const } : p

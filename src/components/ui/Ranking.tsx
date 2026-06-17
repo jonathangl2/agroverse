@@ -9,6 +9,32 @@ const flagUrl = (code: string) =>
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 
+// Distribución del premio: Top 3
+const DISTRIBUTION = [
+  { pos: 1, label: "1er lugar", pct: 50, medal: "🥇" },
+  { pos: 2, label: "2do lugar", pct: 30, medal: "🥈" },
+  { pos: 3, label: "3er lugar", pct: 20, medal: "🥉" },
+];
+
+// Próxima liquidación: último día del mes a las 23:59 UTC
+function getNextLiquidation() {
+  const now = new Date();
+  const lastDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 0));
+  return lastDay;
+}
+
+function formatUTC(date: Date) {
+  return date.toUTCString().replace("GMT", "UTC");
+}
+
+function formatLocal(date: Date) {
+  return date.toLocaleString(undefined, {
+    day: "2-digit", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+    timeZoneName: "short",
+  });
+}
+
 interface Props {
   currentAddress?: string | null;
   currentPoints?: number;
@@ -20,6 +46,7 @@ export default function Ranking({ currentAddress, currentPoints, username, count
   const prizePool = usePrizePool();
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     getTopPlayers(20).then((data) => {
@@ -30,6 +57,8 @@ export default function Ranking({ currentAddress, currentPoints, username, count
 
   const myPosition = players.findIndex((p) => p.wallet_address === currentAddress) + 1;
   const topPoints = players[0]?.points ?? 1;
+  const liquidation = getNextLiquidation();
+  const pool = prizePool ? parseFloat(prizePool) : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -38,15 +67,22 @@ export default function Ranking({ currentAddress, currentPoints, username, count
         <p className="text-green-600 text-xs mt-1">Top agricultores del mundo · Season 1</p>
       </div>
 
+      {/* Premio */}
       <div className="bg-amber-100 border-2 border-amber-300 rounded-2xl p-3 text-center">
-        <p className="text-amber-800 text-sm font-bold">🎁 Premio del mes</p>
+        <p className="text-amber-800 text-sm font-bold">🎁 Premio total del mes</p>
         <p className="text-amber-600 font-mono font-black text-xl mt-1">
           {prizePool !== null ? `${prizePool} USDC` : "Cargando..."}
         </p>
         <p className="text-amber-700 text-xs mt-1">
           Top 3 recibe <strong>USDC real</strong> directo a su wallet
         </p>
-        <p className="text-amber-500 text-xs mt-0.5">Reset: 30 Jun 2026</p>
+        <p className="text-amber-500 text-xs mt-0.5">Liquidación: 30 Jun 2026</p>
+        <button
+          onClick={() => setShowModal(true)}
+          className="mt-2 text-amber-600 text-xs underline underline-offset-2 font-semibold"
+        >
+          Ver distribución del premio →
+        </button>
       </div>
 
       {/* Tu posición */}
@@ -108,6 +144,72 @@ export default function Ranking({ currentAddress, currentPoints, username, count
           );
         })}
       </div>
+
+      {/* Modal distribución */}
+      {showModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="w-full max-w-[430px] bg-white rounded-t-3xl p-6 pb-10 shadow-2xl animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+            <p className="text-green-800 font-bold text-lg text-center">🎁 Distribución del premio</p>
+            <p className="text-gray-500 text-xs text-center mt-1 mb-5">
+              Premio total del mes · Season 1
+            </p>
+
+            {/* Barras de distribución */}
+            <div className="flex flex-col gap-3 mb-6">
+              {DISTRIBUTION.map((d) => {
+                const amount = pool !== null ? ((pool * d.pct) / 100).toFixed(2) : null;
+                return (
+                  <div key={d.pos} className="flex items-center gap-3">
+                    <span className="text-2xl w-8 text-center shrink-0">{d.medal}</span>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-baseline mb-1">
+                        <span className="text-green-800 text-sm font-semibold">{d.label}</span>
+                        <span className="text-amber-600 font-mono font-bold text-sm">
+                          {amount !== null ? `${amount} USDC` : `${d.pct}%`}
+                        </span>
+                      </div>
+                      <div className="bg-gray-100 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-amber-400 to-amber-500 h-2 rounded-full"
+                          style={{ width: `${d.pct}%` }}
+                        />
+                      </div>
+                      <p className="text-gray-400 text-xs mt-0.5">{d.pct}% del pozo</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Próxima liquidación */}
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+              <p className="text-amber-800 font-semibold text-sm mb-2">⏰ Próxima liquidación</p>
+              <p className="text-amber-700 text-xs font-mono">{formatUTC(liquidation)}</p>
+              <p className="text-amber-500 text-xs mt-1">
+                En tu zona horaria: <span className="font-semibold">{formatLocal(liquidation)}</span>
+              </p>
+              <p className="text-gray-400 text-xs mt-2 leading-relaxed">
+                El pago se realiza automáticamente al cierre del mes. Si estás en una zona UTC+ puede ser que el pago aparezca el primer día del siguiente mes.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setShowModal(false)}
+              className="mt-5 w-full bg-green-600 text-white font-bold py-3 rounded-2xl active:scale-95 transition"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

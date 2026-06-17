@@ -77,3 +77,9 @@ body {
 .animate-harvest  { animation: harvest-shine 1.2s ease-in-out infinite; }
 .animate-float    { animation: float 2.5s ease-in-out infinite; }
 .animate-sun      { animation: sun-spin 12s linear infinite; }
+.animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
+
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}

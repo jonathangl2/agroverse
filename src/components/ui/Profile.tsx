@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import type { SkinId } from "@/types";
 import type { SkinRow } from "@/lib/supabase";
 import { getSkins, getPlayerSkins } from "@/lib/supabase";
-import { GAME_CONFIG } from "@/lib/constants";
 
 const flagUrl = (code: string) =>
   code === "OTHER" ? null : `https://flagcdn.com/w40/${code.toLowerCase()}.png`;
@@ -24,7 +23,6 @@ export default function Profile({ address, username, countryCode, points, level,
   const [allSkins, setAllSkins]       = useState<SkinRow[]>([]);
   const [ownedIds, setOwnedIds]       = useState<string[]>(["default"]);
   const flagSrc = flagUrl(countryCode);
-  const usdt    = (points / GAME_CONFIG.POINTS_TO_USDT_RATE).toFixed(3);
   const base    = (level - 1) * 500;
   const next    = level * 500;
   const progress = Math.min(100, Math.max(0, ((points - base) / (next - base)) * 100));
@@ -40,43 +38,41 @@ export default function Profile({ address, username, countryCode, points, level,
   return (
     <div className="flex flex-col gap-4">
 
-      <div className="bg-gradient-to-b from-amber-300 to-amber-500 rounded-3xl p-6 flex flex-col items-center shadow">
-        <div className="text-2xl animate-sun mb-1">☀️</div>
-        <div className="w-28 h-28 bg-white/30 rounded-full flex items-center justify-center text-7xl border-4 border-white/50 shadow-lg mb-3">
+      <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl px-4 py-3.5 flex items-center gap-4">
+        <div className="w-16 h-16 bg-white/30 rounded-full flex items-center justify-center text-4xl border-[3px] border-white/45 shrink-0">
           {activeSkin?.emoji ?? "👨‍🌾"}
         </div>
-        <p className="text-white font-bold text-lg drop-shadow">{username}</p>
-        <p className="text-white/80 text-sm">{activeSkin?.name ?? "Classic Farmer"}</p>
-
-        <div className="mt-2 flex items-center gap-1.5 bg-black/20 px-3 py-1 rounded-full">
-          {flagSrc
-            ? <img src={flagSrc} alt={countryCode} className="w-5 h-3.5 object-cover rounded-sm" />
-            : <span>🌍</span>}
-          <span className="text-white text-sm">{countryCode}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-white font-bold text-base leading-tight">{username}</p>
+          <p className="text-white/75 text-xs">{activeSkin?.name ?? "Classic Farmer"}</p>
+          <div className="flex items-center gap-2 mt-1.5">
+            <div className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded-full">
+              {flagSrc
+                ? <img src={flagSrc} alt={countryCode} className="w-4 h-3 object-cover rounded-sm" />
+                : <span className="text-xs">🌍</span>}
+              <span className="text-white text-xs">{countryCode}</span>
+            </div>
+            <p className="text-white/55 text-[10px] font-mono">{address.slice(0, 6)}...{address.slice(-4)}</p>
+          </div>
         </div>
-
-        <p className="text-white/60 text-xs mt-1 font-mono">
-          {address.slice(0, 6)}...{address.slice(-4)}
-        </p>
-
         <button
           onClick={onChangeSkin}
-          className="mt-4 bg-white/25 hover:bg-white/40 text-white text-sm px-5 py-2 rounded-full font-semibold border border-white/40 transition active:scale-95"
+          className="shrink-0 bg-white/30 hover:bg-white/45 text-white text-xs px-3.5 py-2 rounded-xl border border-white/40 transition active:scale-95 whitespace-nowrap"
         >
           🎨 Cambiar skin
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Nivel",   value: level,                   color: "text-green-700", bg: "bg-green-50 border-green-200" },
           { label: "Puntos",  value: points.toLocaleString(), color: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
-          { label: "≈ USDC",  value: usdt,                    color: "text-lime-700",  bg: "bg-lime-50 border-lime-200"   },
-          { label: "Balance", value: `${usdcBalance} USDC`,   color: "text-blue-700",  bg: "bg-blue-50 border-blue-200"   },
+          { label: "Balance", value: `${usdcBalance}`,        color: "text-blue-700",  bg: "bg-blue-50 border-blue-200"   },
         ].map((stat) => (
           <div key={stat.label} className={`${stat.bg} border-2 rounded-2xl p-4 text-center`}>
             <p className="text-gray-500 text-xs mb-1">{stat.label}</p>
-            <p className={`${stat.color} font-bold text-2xl`}>{stat.value}</p>
+            <p className={`${stat.color} font-bold text-xl`}>{stat.value}</p>
+            {stat.label === "Balance" && <p className="text-blue-400 text-xs mt-0.5">USDC</p>}
           </div>
         ))}
       </div>

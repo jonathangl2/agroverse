@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { parseUnits, formatUnits } from "viem";
 import { publicClient, getWalletClient, CONTRACT_ADDRESS, USDC_ADDRESS, ERC20_ABI } from "@/lib/viem";
+import { getChosenProvider } from "@/lib/eip6963";
 import ABI from "@/lib/AgroVerseABI.json";
 
 export type TxStatus = "idle" | "approving" | "confirming" | "success" | "error";
@@ -41,7 +42,7 @@ function useContractPay(functionName: "paySeed" | "paySkin") {
     setTxHash(null);
 
     try {
-      const walletClient = getWalletClient();
+      const walletClient = getWalletClient(getChosenProvider() ?? undefined);
       const [address] = await walletClient.getAddresses();
       const amount = parseUnits(priceUsdc.toString(), 6);
 
@@ -73,9 +74,22 @@ function useContractPay(functionName: "paySeed" | "paySkin") {
       setStatus("success");
       return hash;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error en la transacción");
+      const msg = err instanceof Error ? err.message : String(err);
+      let friendly = "Algo salió mal. Intenta de nuevo.";
+      if (/user rejected|user denied|rejected the request|cancelled/i.test(msg)) {
+        friendly = "Cancelaste la transacción.";
+      } else if (/insufficient funds|not enough.*balance|balance.*insufficient/i.test(msg)) {
+        friendly = "No tienes saldo suficiente de USDC para esta compra.";
+      } else if (/insufficient allowance|allowance/i.test(msg)) {
+        friendly = "Error de aprobación. Intenta de nuevo.";
+      } else if (/network|could not fetch|timeout|disconnected/i.test(msg)) {
+        friendly = "Error de red. Revisa tu conexión e intenta de nuevo.";
+      } else if (/nonce/i.test(msg)) {
+        friendly = "Error de nonce. Recarga la página e intenta de nuevo.";
+      }
+      setError(friendly);
       setStatus("error");
-      throw err;
+      throw new Error(friendly);
     }
   };
 

@@ -2,6 +2,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useWallet } from "@/hooks/useWallet";
 import OnboardingSlider from "@/components/ui/OnboardingSlider";
+import WalletPicker from "@/components/ui/WalletPicker";
 import UserSetup from "@/components/ui/UserSetup";
 import Ranking from "@/components/ui/Ranking";
 import Marketplace from "@/components/ui/Marketplace";
@@ -12,11 +13,13 @@ import type { SkinId } from "@/types";
 const flagUrl = (code: string) =>
   code === "OTHER" ? null : `https://flagcdn.com/w40/${code.toLowerCase()}.png`;
 import { getPlayer, upsertPlayer, updatePoints } from "@/lib/supabase";
+import { useSound } from "@/hooks/useSound";
 
 type Tab = "farm" | "profile" | "ranking" | "shop";
 
 export default function GameApp() {
   const walletReal = useWallet();
+  const { play, startAmbient, stopAmbient } = useSound();
 
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
 
@@ -63,6 +66,11 @@ export default function GameApp() {
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
+  // Ambient: arranca cuando el usuario ya pasó el tutorial y corre siempre
+  useEffect(() => {
+    if (onboarded) startAmbient();
+  }, [onboarded]);
+
   // 1. Aún leyendo localStorage — no renderizar nada para evitar flash
   if (onboarded === null) return null;
 
@@ -72,38 +80,49 @@ export default function GameApp() {
   }
 
   // 3. Sin wallet — pantalla de conexión
+  const pickerEl = walletReal.showPicker ? (
+    <WalletPicker
+      providers={walletReal.pendingProviders}
+      onSelect={walletReal.selectProvider}
+      onClose={walletReal.closePicker}
+    />
+  ) : null;
+
   if (!walletReal.isConnected) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center"
-           style={{ background: "linear-gradient(180deg, #87ceeb 0%, #e8f5e9 40%, #fff8e1 100%)" }}>
-        <div className="text-5xl mb-1 animate-float">☁️</div>
-        <img src="/assets/logo.png" alt="AgroVerse" className="w-24 h-24 mb-4 animate-float" />
-        <h1 className="text-3xl font-bold text-green-800 mb-1">AgroVerse</h1>
-        <p className="text-green-600 text-sm mb-1">Season 1 · Global</p>
-        <p className="text-green-700/80 text-sm mb-8 max-w-xs">
-          Cultiva desde tu país y compite con agricultores de todo el mundo. Gana USDC real.
-        </p>
-        <div className="w-full max-w-xs flex flex-col gap-3">
-          {!walletReal.isMiniPayEnv && (
-            <button onClick={walletReal.connect} disabled={walletReal.isLoading}
-              className="w-full bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-2xl font-bold text-base shadow transition disabled:opacity-50">
-              {walletReal.isLoading ? "Conectando..." : "🔗 Conectar Wallet"}
+      <>
+        <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center"
+             style={{ background: "linear-gradient(180deg, #87ceeb 0%, #e8f5e9 40%, #fff8e1 100%)" }}>
+          <div className="text-5xl mb-1 animate-float">☁️</div>
+          <img src="/assets/logo.png" alt="AgroVerse" className="w-24 h-24 mb-4 animate-float" />
+          <h1 className="text-3xl font-bold text-green-800 mb-1">AgroVerse</h1>
+          <p className="text-green-600 text-sm mb-1">Season 1 · Global</p>
+          <p className="text-green-700/80 text-sm mb-8 max-w-xs">
+            Cultiva desde tu país y compite con agricultores de todo el mundo. Gana USDC real.
+          </p>
+          <div className="w-full max-w-xs flex flex-col gap-3">
+            {!walletReal.isMiniPayEnv && (
+              <button onClick={walletReal.connect} disabled={walletReal.isLoading}
+                className="w-full bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-2xl font-bold text-base shadow transition disabled:opacity-50">
+                {walletReal.isLoading ? "Detectando wallets..." : "🔗 Conectar Wallet"}
+              </button>
+            )}
+            {walletReal.error && (
+              <p className="text-red-500 text-xs text-center">{walletReal.error}</p>
+            )}
+            {walletReal.isMiniPayEnv && (
+              <p className="text-green-600 text-sm animate-pulse">Conectando con MiniPay...</p>
+            )}
+            <button
+              onClick={() => setOnboarded(false)}
+              className="text-green-600/70 text-sm underline underline-offset-2 mt-1"
+            >
+              ¿Primera vez? Ver tutorial
             </button>
-          )}
-          {walletReal.error && (
-            <p className="text-red-500 text-xs text-center">{walletReal.error}</p>
-          )}
-          {walletReal.isMiniPayEnv && (
-            <p className="text-green-600 text-sm animate-pulse">Conectando con MiniPay...</p>
-          )}
-          <button
-            onClick={() => setOnboarded(false)}
-            className="text-green-600/70 text-sm underline underline-offset-2 mt-1"
-          >
-            ¿Primera vez? Ver tutorial
-          </button>
+          </div>
         </div>
-      </div>
+        {pickerEl}
+      </>
     );
   }
 
@@ -159,6 +178,7 @@ export default function GameApp() {
       const newLevel = Math.floor(next / 500) + 1;
       if (newLevel > level) {
         setLevel(newLevel);
+        play("levelup");
         showToast(`¡Subiste al nivel ${newLevel}!`, "level");
         if (walletReal.address) updatePoints(walletReal.address, next, newLevel);
       } else {
@@ -170,6 +190,7 @@ export default function GameApp() {
   };
 
   const handleBuySkin = (skinId: SkinId) => {
+    play("coins");
     setSkin(skinId);
     showToast("🎨 ¡Skin equipada!", "skin");
   };

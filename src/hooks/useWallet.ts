@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { getWalletClient, isMiniPay, publicClient, USDC_ADDRESS, activeChain } from "@/lib/viem";
-import { formatUnits } from "viem";
-import { ERC20_ABI } from "@/lib/viem";
+import { publicClient, USDC_ADDRESS, activeChain, ERC20_ABI } from "@/lib/viem";
+import { createWalletClient, custom, formatUnits } from "viem";
+import { isMiniPay } from "@/lib/viem";
+import { discoverProviders, setChosenProvider, type EIP6963ProviderDetail } from "@/lib/eip6963";
 
 interface WalletState {
   address: string | null;
@@ -11,6 +12,9 @@ interface WalletState {
   isMiniPayEnv: boolean;
   isLoading: boolean;
   error: string | null;
+  // provider picker
+  pendingProviders: EIP6963ProviderDetail[];
+  showPicker: boolean;
 }
 
 export function useWallet() {
@@ -21,12 +25,14 @@ export function useWallet() {
     isMiniPayEnv: false,
     isLoading: false,
     error: null,
+    pendingProviders: [],
+    showPicker: false,
   });
 
   useEffect(() => {
     const miniPay = isMiniPay();
     setState((s) => ({ ...s, isMiniPayEnv: miniPay }));
-    if (miniPay) connect();
+    if (miniPay) connectWithProvider(window.ethereum as EIP6963ProviderDetail["provider"]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -45,26 +51,69 @@ export function useWallet() {
     } catch { /* silencioso */ }
   }, []);
 
-  const connect = useCallback(async () => {
-    setState((s) => ({ ...s, isLoading: true, error: null }));
+  const connectWithProvider = useCallback(async (provider: EIP6963ProviderDetail["provider"]) => {
+    setState((s) => ({ ...s, isLoading: true, error: null, showPicker: false }));
     try {
-      // Solicitar acceso explícito — abre el popup de la wallet
-      if (typeof window !== "undefined" && window.ethereum) {
-        await (window.ethereum as { request: (a: { method: string }) => Promise<unknown> })
-          .request({ method: "eth_requestAccounts" });
-      }
+      setChosenProvider(provider);
 
-      const walletClient = getWalletClient();
+      const walletClient = createWalletClient({
+        chain: activeChain,
+        transport: custom(provider),
+      });
+
+      // requestAddresses dispara el popup de la wallet (equivale a eth_requestAccounts)
+      const addresses = await walletClient.requestAddresses();
+      const address = addresses[0];
+      if (!address) throw new Error("No se pudo obtener la dirección");
 
       try {
         await walletClient.switchChain({ id: activeChain.id });
       } catch { /* si no soporta switchChain lo ignoramos */ }
 
-      const [address] = await walletClient.getAddresses();
-      if (!address) throw new Error("No se pudo obtener la dirección");
-
       await fetchBalances(address);
       setState((s) => ({ ...s, address, isConnected: true, isLoading: false }));
+    } catch (err) {
+      // Si falla, re-mostrar el picker para que elija otra wallet
+      const providers = await discoverProviders().catch(() => []);
+      if (providers.length > 1) {
+        setState((s) => ({
+          ...s,
+          isLoading: false,
+          error: `No se pudo conectar con esa wallet. Selecciona otra.`,
+          pendingProviders: providers,
+          showPicker: true,
+        }));
+      } else {
+        setState((s) => ({
+          ...s,
+          isLoading: false,
+          error: err instanceof Error ? err.message : "Error al conectar",
+        }));
+      }
+    }
+  }, [fetchBalances]);
+
+  const connect = useCallback(async () => {
+    setState((s) => ({ ...s, isLoading: true, error: null }));
+    try {
+      const providers = await discoverProviders();
+
+      if (providers.length === 0) {
+        throw new Error("No se detectó ninguna wallet. Instala MetaMask u otra wallet compatible.");
+      }
+
+      if (providers.length === 1) {
+        // Only one — connect directly, no picker needed
+        await connectWithProvider(providers[0].provider);
+      } else {
+        // Multiple wallets — show picker
+        setState((s) => ({
+          ...s,
+          isLoading: false,
+          pendingProviders: providers,
+          showPicker: true,
+        }));
+      }
     } catch (err) {
       setState((s) => ({
         ...s,
@@ -72,7 +121,15 @@ export function useWallet() {
         error: err instanceof Error ? err.message : "Error al conectar",
       }));
     }
-  }, [fetchBalances]);
+  }, [connectWithProvider]);
+
+  const selectProvider = useCallback((detail: EIP6963ProviderDetail) => {
+    connectWithProvider(detail.provider);
+  }, [connectWithProvider]);
+
+  const closePicker = useCallback(() => {
+    setState((s) => ({ ...s, showPicker: false, pendingProviders: [], isLoading: false }));
+  }, []);
 
   const disconnect = useCallback(() => {
     setState({
@@ -82,8 +139,10 @@ export function useWallet() {
       isMiniPayEnv: isMiniPay(),
       isLoading: false,
       error: null,
+      pendingProviders: [],
+      showPicker: false,
     });
   }, []);
 
-  return { ...state, connect, disconnect, fetchBalances };
+  return { ...state, connect, disconnect, fetchBalances, selectProvider, closePicker };
 }

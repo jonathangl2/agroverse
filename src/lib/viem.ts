@@ -50,13 +50,12 @@ export const publicClient = createPublicClient({
   transport: http(),
 });
 
-export function getWalletClient() {
-  if (typeof window === "undefined" || !window.ethereum) {
-    throw new Error("No hay wallet disponible");
-  }
+export function getWalletClient(provider?: { request: (a: { method: string; params?: unknown[] }) => Promise<unknown> }) {
+  const p = provider ?? (typeof window !== "undefined" ? window.ethereum : null);
+  if (!p) throw new Error("No hay wallet disponible");
   return createWalletClient({
     chain: activeChain,
-    transport: custom(window.ethereum),
+    transport: custom(p),
   });
 }
 
