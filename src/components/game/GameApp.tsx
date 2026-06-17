@@ -90,6 +90,9 @@ export default function GameApp() {
               {walletReal.isLoading ? "Conectando..." : "🔗 Conectar Wallet"}
             </button>
           )}
+          {walletReal.error && (
+            <p className="text-red-500 text-xs text-center">{walletReal.error}</p>
+          )}
           {walletReal.isMiniPayEnv && (
             <p className="text-green-600 text-sm animate-pulse">Conectando con MiniPay...</p>
           )}
@@ -100,7 +103,6 @@ export default function GameApp() {
             ¿Primera vez? Ver tutorial
           </button>
         </div>
-        {walletReal.error && <p className="text-red-500 text-sm mt-3">{walletReal.error}</p>}
       </div>
     );
   }
@@ -190,12 +192,15 @@ export default function GameApp() {
             <span className="text-yellow-300 font-bold text-xs font-mono">⭐ {points.toLocaleString()}</span>
             <span className="text-green-300 text-xs">pts</span>
           </div>
-          <span className="bg-white/20 text-white text-xs px-2 py-1 rounded-full max-w-[110px] truncate shrink-0 flex items-center gap-1">
+          <button
+            onClick={() => switchTab("profile")}
+            className="bg-white/20 hover:bg-white/30 text-white text-xs px-2 py-1 rounded-full max-w-[110px] truncate shrink-0 flex items-center gap-1 transition"
+          >
             {countryFlagUrl
               ? <img src={countryFlagUrl} alt={countryCode} className="w-4 h-3 object-cover rounded-sm inline" />
               : "🌍"}
             {username}
-          </span>
+          </button>
         </div>
       </div>
 

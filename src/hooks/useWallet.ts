@@ -48,9 +48,14 @@ export function useWallet() {
   const connect = useCallback(async () => {
     setState((s) => ({ ...s, isLoading: true, error: null }));
     try {
+      // Solicitar acceso explícito — abre el popup de la wallet
+      if (typeof window !== "undefined" && window.ethereum) {
+        await (window.ethereum as { request: (a: { method: string }) => Promise<unknown> })
+          .request({ method: "eth_requestAccounts" });
+      }
+
       const walletClient = getWalletClient();
 
-      // Pedir al usuario cambiar a la red correcta si es necesario
       try {
         await walletClient.switchChain({ id: activeChain.id });
       } catch { /* si no soporta switchChain lo ignoramos */ }
