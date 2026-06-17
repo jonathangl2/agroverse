@@ -38,26 +38,28 @@ export default function Profile({ address, username, countryCode, points, level,
   return (
     <div className="flex flex-col gap-4">
 
-      <div className="bg-gradient-to-r from-amber-400 to-amber-500 rounded-2xl px-4 py-3.5 flex items-center gap-4">
-        <div className="w-16 h-16 bg-white/30 rounded-full flex items-center justify-center text-4xl border-[3px] border-white/45 shrink-0">
+      <div className="rounded-2xl px-4 py-3.5 flex items-center gap-4" style={{ background: "linear-gradient(135deg, #15803d 0%, #166534 55%, #d97706 100%)" }}>
+        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-4xl border-[3px] border-white/30 shrink-0">
           {activeSkin?.emoji ?? "👨‍🌾"}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-white font-bold text-base leading-tight">{username}</p>
-          <p className="text-white/75 text-xs">{activeSkin?.name ?? "Classic Farmer"}</p>
-          <div className="flex items-center gap-2 mt-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <p className="text-white font-bold text-base leading-tight">{username}</p>
+            <p className="text-white/50 text-[10px] font-mono">({address.slice(0, 6)}...{address.slice(-4)})</p>
+          </div>
+          <p className="text-white/75 text-xs mt-0.5">{activeSkin?.name ?? "Classic Farmer"}</p>
+          <div className="flex items-center gap-1 mt-1.5">
             <div className="flex items-center gap-1 bg-black/20 px-2 py-0.5 rounded-full">
               {flagSrc
                 ? <img src={flagSrc} alt={countryCode} className="w-4 h-3 object-cover rounded-sm" />
                 : <span className="text-xs">🌍</span>}
               <span className="text-white text-xs">{countryCode}</span>
             </div>
-            <p className="text-white/55 text-[10px] font-mono">{address.slice(0, 6)}...{address.slice(-4)}</p>
           </div>
         </div>
         <button
           onClick={onChangeSkin}
-          className="shrink-0 bg-white/30 hover:bg-white/45 text-white text-xs px-3.5 py-2 rounded-xl border border-white/40 transition active:scale-95 whitespace-nowrap"
+          className="shrink-0 self-center bg-white/20 hover:bg-white/35 text-white text-xs px-3.5 py-2 rounded-xl border border-white/30 transition active:scale-95 whitespace-nowrap"
         >
           🎨 Cambiar skin
         </button>
