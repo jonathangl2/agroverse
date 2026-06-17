@@ -66,9 +66,23 @@ export default function GameApp() {
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
-  // Ambient: arranca cuando el usuario ya pasó el tutorial y corre siempre
+  // Ambient: arranca en el primer click/tap del usuario (política autoplay del navegador)
+  const ambientStarted = useRef(false);
   useEffect(() => {
-    if (onboarded) startAmbient();
+    if (!onboarded) return;
+    const unlock = () => {
+      if (ambientStarted.current) return;
+      ambientStarted.current = true;
+      startAmbient();
+      document.removeEventListener("click", unlock);
+      document.removeEventListener("touchstart", unlock);
+    };
+    document.addEventListener("click", unlock);
+    document.addEventListener("touchstart", unlock);
+    return () => {
+      document.removeEventListener("click", unlock);
+      document.removeEventListener("touchstart", unlock);
+    };
   }, [onboarded]);
 
   // 1. Aún leyendo localStorage — no renderizar nada para evitar flash
