@@ -111,8 +111,8 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
     const crop = cropsRef.current[cropId];
     if (!crop) return;
     const growMs = premium
-      ? crop.grow_time_hours_premium * 9 * 1000
-      : crop.grow_time_hours * 36 * 1000;
+      ? crop.grow_time_hours_premium * 10 * 1000
+      : crop.grow_time_hours * 10 * 1000;
     const now = Date.now();
     const updated = plotsRef.current.map((p) =>
       p.id === plotId
