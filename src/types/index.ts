@@ -28,6 +28,7 @@ export interface Plot {
   cropId?: CropId;
   plantedAt?: number;
   readyAt?: number;
+  isPremium?: boolean;
 }
 
 // ─── Skins (dinámico desde Supabase) ─────────────────────────────────────────

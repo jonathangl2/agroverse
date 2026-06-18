@@ -37,6 +37,8 @@ export interface CropRow {
   emoji: string;
   grow_time_hours: number;
   points_reward: number;
+  grow_time_hours_premium: number;
+  points_reward_premium: number;
   seed_cost: number;
   seed_cost_token: string;
   is_premium: boolean;

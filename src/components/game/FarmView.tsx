@@ -111,12 +111,12 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
     const crop = cropsRef.current[cropId];
     if (!crop) return;
     const growMs = premium
-      ? crop.grow_time_hours * 9 * 1000
+      ? crop.grow_time_hours_premium * 9 * 1000
       : crop.grow_time_hours * 36 * 1000;
     const now = Date.now();
     const updated = plotsRef.current.map((p) =>
       p.id === plotId
-        ? { ...p, state: "planted" as const, cropId, plantedAt: now, readyAt: now + growMs }
+        ? { ...p, state: "planted" as const, cropId, plantedAt: now, readyAt: now + growMs, isPremium: premium }
         : p
     );
     plotsRef.current = updated;
@@ -150,7 +150,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
     if (!plot?.cropId) return;
     const crop = cropsRef.current[plot.cropId];
     play("harvest");
-    if (crop) onPointsEarned(crop.points_reward);
+    if (crop) onPointsEarned(plot.isPremium ? crop.points_reward_premium : crop.points_reward);
     const updated = plotsRef.current.map((p) =>
       p.id === plotId ? { id: plotId, state: "empty" as const } : p
     );
@@ -250,7 +250,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
 
                 {isReady && (
                   <p className="text-yellow-600 font-bold text-xs mt-0.5">
-                    ¡Lista para cosechar! +{crop?.points_reward} pts
+                    ¡Lista para cosechar! +{plot.isPremium ? (crop?.points_reward_premium ?? crop?.points_reward) : crop?.points_reward} pts
                   </p>
                 )}
 
@@ -337,7 +337,7 @@ export default function FarmView({ onPointsEarned, demoMode, walletAddress, onPu
                           {c.seed_cost} {c.seed_cost_token}
                         </div>
                         <div className="text-amber-500 text-xs">
-                          ⚡ {Math.floor(c.grow_time_hours / 4)}h · +{Math.floor(c.points_reward * 1.6)} pts
+                          ⚡ {c.grow_time_hours_premium}h · +{c.points_reward_premium} pts
                         </div>
                       </button>
                     )}
